@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Content - Goldco CMS{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-5">
+  <h1 class="text-2xl font-semibold text-gray-800 dark:text-neutral-200">Upload Content</h1>
+  <p class="text-sm text-gray-600 dark:text-neutral-400">Add new content to your CMS</p>
+</div>
+
+<!-- Upload Form Card -->
+<div class="max-w-4xl">
+  <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
+    <div class="p-6 sm:p-8">
+      <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+
+        <!-- Content Type Selection -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium mb-3 dark:text-white">Content Type</label>
+          <div class="grid sm:grid-cols-4 gap-2">
+            <div class="flex">
+              <input type="radio" name="content_type" value="file" id="type-file" class="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800" checked>
+              <label for="type-file" class="text-sm text-gray-500 ms-2 dark:text-neutral-400">File Upload</label>
+            </div>
+
+            <div class="flex">
+              <input type="radio" name="content_type" value="text" id="type-text" class="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800">
+              <label for="type-text" class="text-sm text-gray-500 ms-2 dark:text-neutral-400">Text</label>
+            </div>
+
+            <div class="flex">
+              <input type="radio" name="content_type" value="link" id="type-link" class="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800">
+              <label for="type-link" class="text-sm text-gray-500 ms-2 dark:text-neutral-400">Link</label>
+            </div>
+
+            <div class="flex">
+              <input type="radio" name="content_type" value="code" id="type-code" class="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800">
+              <label for="type-code" class="text-sm text-gray-500 ms-2 dark:text-neutral-400">Code</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Title Field (Always visible) -->
+        <div class="mb-4">
+          <label for="title" class="block text-sm font-medium mb-2 dark:text-white">Title <span class="text-red-500">*</span></label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            required
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="Enter a descriptive title"
+          >
+        </div>
+
+        <!-- Description Field (Always visible) -->
+        <div class="mb-4">
+          <label for="description" class="block text-sm font-medium mb-2 dark:text-white">Description</label>
+          <textarea
+            id="description"
+            name="description"
+            rows="3"
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="Enter a brief description"
+          ></textarea>
+        </div>
+
+        <!-- File Upload Field (Shown when type is 'file') -->
+        <div id="file-upload-section" class="mb-4">
+          <label class="block text-sm font-medium mb-2 dark:text-white">Upload File</label>
+          <div class="flex items-center justify-center w-full">
+            <label for="file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-neutral-800 dark:bg-neutral-900 hover:bg-gray-100 dark:border-neutral-600 dark:hover:border-neutral-500">
+              <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                <svg class="w-10 h-10 mb-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">PDF, PNG, JPG, DOCX, XLSX, ZIP (MAX. 16MB)</p>
+              </div>
+              <input id="file" name="file" type="file" class="hidden" accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.xls,.xlsx,.zip,.txt" />
+            </label>
+          </div>
+          <p class="mt-2 text-xs text-gray-500 dark:text-neutral-500">Allowed types: pdf, png, jpg, jpeg, gif, doc, docx, xls, xlsx, zip, txt</p>
+        </div>
+
+        <!-- Content Field (Shown when type is 'text' or 'code') -->
+        <div id="content-section" class="mb-4 hidden">
+          <label for="content" class="block text-sm font-medium mb-2 dark:text-white">Content</label>
+          <textarea
+            id="content"
+            name="content"
+            rows="10"
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600 font-mono"
+            placeholder="Enter your content here..."
+          ></textarea>
+        </div>
+
+        <!-- URL Field (Shown when type is 'link') -->
+        <div id="url-section" class="mb-4 hidden">
+          <label for="url" class="block text-sm font-medium mb-2 dark:text-white">URL</label>
+          <input
+            type="url"
+            id="url"
+            name="url"
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="https://example.com"
+          >
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-x-2 mt-6">
+          <a
+            href="{{ url_for('frontend') }}"
+            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
+          >
+            Cancel
+          </a>
+          <button
+            type="submit"
+            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            Upload Content
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for Dynamic Form Fields -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const fileSection = document.getElementById('file-upload-section');
+    const contentSection = document.getElementById('content-section');
+    const urlSection = document.getElementById('url-section');
+    const radioButtons = document.querySelectorAll('input[name="content_type"]');
+
+    function updateFormFields() {
+      const selectedType = document.querySelector('input[name="content_type"]:checked').value;
+
+      // Hide all conditional sections
+      fileSection.classList.add('hidden');
+      contentSection.classList.add('hidden');
+      urlSection.classList.add('hidden');
+
+      // Show relevant section
+      if (selectedType === 'file') {
+        fileSection.classList.remove('hidden');
+      } else if (selectedType === 'text' || selectedType === 'code') {
+        contentSection.classList.remove('hidden');
+      } else if (selectedType === 'link') {
+        urlSection.classList.remove('hidden');
+      }
+    }
+
+    // Add event listeners to radio buttons
+    radioButtons.forEach(radio => {
+      radio.addEventListener('change', updateFormFields);
+    });
+
+    // Initialize form on page load
+    updateFormFields();
+  });
+</script>
+
+{% endblock %}
