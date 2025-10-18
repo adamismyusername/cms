@@ -105,22 +105,38 @@
       <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-neutral-800 dark:border-neutral-700">
         <!-- Header -->
         <div class="px-6 py-4 border-b border-gray-200 dark:border-neutral-700">
-          <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
-            Recent Content
-          </h2>
-          <p class="text-sm text-gray-600 dark:text-neutral-400">
-            Latest content additions
-          </p>
+          <div class="flex justify-between items-start">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
+                Recent Content
+              </h2>
+              <p class="text-sm text-gray-600 dark:text-neutral-400">
+                Latest content additions
+              </p>
+            </div>
+            <button
+              onclick="resetTableWidths('recent-content')"
+              class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            >
+              Reset Column Widths
+            </button>
+          </div>
         </div>
 
         <!-- Table -->
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 resizable-table" data-table-name="recent-content">
+          <colgroup>
+            <col data-column="title">
+            <col data-column="type">
+            <col data-column="date">
+            <col data-column="action">
+          </colgroup>
           <thead class="bg-gray-50 dark:bg-neutral-800">
             <tr>
-              <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Title</th>
-              <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Type</th>
-              <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Date</th>
-              <th scope="col" class="px-6 py-3 text-end text-xs font-medium text-gray-500 uppercase dark:text-neutral-500">Action</th>
+              <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500" data-column="title">Title</th>
+              <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500" data-column="type">Type</th>
+              <th scope="col" class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-neutral-500" data-column="date">Date</th>
+              <th scope="col" class="px-6 py-3 text-end text-xs font-medium text-gray-500 uppercase dark:text-neutral-500" data-column="action">Action</th>
             </tr>
           </thead>
 

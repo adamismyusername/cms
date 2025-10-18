@@ -1,0 +1,61 @@
+/* Resizable Table Styles */
+
+/* Make table headers position relative for absolute positioning of handles */
+.resizable-table thead th {
+  position: relative;
+  user-select: none;
+}
+
+/* Ensure consistent width calculations */
+.resizable-table th,
+.resizable-table td {
+  box-sizing: border-box;
+}
+
+/* Resize handle styles */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  background-color: transparent;
+  border-right: 2px solid rgba(209, 213, 219, 0.5); /* Gray-300 with transparency - always visible */
+  transition: border-color 0.2s ease;
+  z-index: 10;
+}
+
+/* Show handle on hover over table header */
+.resizable-table thead th:hover .resize-handle {
+  border-right: 2px solid rgba(59, 130, 246, 0.7); /* Blue-500 - more prominent on hover */
+}
+
+/* Active dragging state */
+.resize-handle.active {
+  border-right: 2px solid rgb(37, 99, 235) !important; /* Solid blue-600 during drag */
+}
+
+/* Visual feedback during resize */
+.resizable-table.resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* Prevent text selection during drag */
+.resizable-table.resizing * {
+  user-select: none;
+}
+
+/* Dark mode support */
+.dark .resize-handle {
+  border-right: 2px solid rgba(115, 115, 115, 0.5); /* Neutral-600 with transparency - always visible */
+}
+
+.dark .resizable-table thead th:hover .resize-handle {
+  border-right: 2px solid rgba(96, 165, 250, 0.7); /* Blue-400 - more prominent on hover */
+}
+
+.dark .resize-handle.active {
+  border-right: 2px solid rgb(96, 165, 250) !important; /* Solid blue-400 during drag */
+}

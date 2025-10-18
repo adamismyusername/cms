@@ -25,9 +25,10 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/main.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/resizable-table.css') }}">
 </head>
 
-<body class="bg-gray-50 dark:bg-neutral-900">
+<body class="bg-gray-50 dark:bg-neutral-900" data-user-id="{{ session['user']['id'] if session.get('user') else '' }}">
 
   {% include 'includes/header.html' %}
 
@@ -51,6 +52,7 @@
   <script src="{{ url_for('static', filename='assets/js/apexcharts.min.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/helper-apexcharts.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/index.js') }}"></script>
+  <script src="{{ url_for('static', filename='assets/js/resizable-table.js') }}"></script>
 
 </body>
 </html>

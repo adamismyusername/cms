@@ -38,6 +38,14 @@
                 </button>
               </form>
 
+              <!-- Reset Column Widths Button -->
+              <button
+                onclick="resetTableWidths('quotes-list')"
+                class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              >
+                Reset Columns
+              </button>
+
               {% if session.role == 'admin' %}
               <!-- Add Quote Button (Admin Only) -->
               <a
@@ -143,10 +151,18 @@
 
         {% if quotes and quotes|length > 0 %}
         <!-- Table -->
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 resizable-table" data-table-name="quotes-list">
+          <colgroup>
+            <col data-column="quote">
+            <col data-column="author">
+            <col data-column="source">
+            <col data-column="date">
+            <col data-column="tags">
+            <col data-column="actions">
+          </colgroup>
           <thead class="bg-gray-50 dark:bg-neutral-800">
             <tr>
-              <th scope="col" class="px-6 py-3 text-start">
+              <th scope="col" class="px-6 py-3 text-start" data-column="quote">
                 <div class="flex items-center gap-x-2">
                   <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                     Quote
@@ -154,7 +170,7 @@
                 </div>
               </th>
 
-              <th scope="col" class="px-6 py-3 text-start">
+              <th scope="col" class="px-6 py-3 text-start" data-column="author">
                 <div class="flex items-center gap-x-2">
                   <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                     Author
@@ -162,7 +178,7 @@
                 </div>
               </th>
 
-              <th scope="col" class="px-6 py-3 text-start">
+              <th scope="col" class="px-6 py-3 text-start" data-column="source">
                 <div class="flex items-center gap-x-2">
                   <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                     Source
@@ -170,7 +186,7 @@
                 </div>
               </th>
 
-              <th scope="col" class="px-6 py-3 text-start">
+              <th scope="col" class="px-6 py-3 text-start" data-column="date">
                 <div class="flex items-center gap-x-2">
                   <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                     Date
@@ -178,7 +194,7 @@
                 </div>
               </th>
 
-              <th scope="col" class="px-6 py-3 text-start">
+              <th scope="col" class="px-6 py-3 text-start" data-column="tags">
                 <div class="flex items-center gap-x-2">
                   <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                     Tags
@@ -186,7 +202,7 @@
                 </div>
               </th>
 
-              <th scope="col" class="px-6 py-3 text-end">
+              <th scope="col" class="px-6 py-3 text-end" data-column="actions">
                 <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                   Actions
                 </span>
@@ -197,7 +213,7 @@
           <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
             {% for quote in quotes %}
             <tr class="hover:bg-gray-50 dark:hover:bg-neutral-700">
-              <td class="size-px px-6 py-3">
+              <td class="px-6 py-3">
                 <span class="text-sm text-gray-800 dark:text-neutral-200">
                   {% if quote.quote_text|length > 100 %}
                     {{ quote.quote_text[:100] }}...
@@ -207,7 +223,7 @@
                 </span>
               </td>
 
-              <td class="size-px whitespace-nowrap px-6 py-3">
+              <td class="whitespace-nowrap px-6 py-3">
                 <a
                   href="{{ url_for('author_profile', author_id=quote.author.id) }}"
                   class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500"
@@ -216,13 +232,13 @@
                 </a>
               </td>
 
-              <td class="size-px px-6 py-3">
+              <td class="px-6 py-3">
                 <span class="text-sm text-gray-600 dark:text-neutral-400">
                   {{ quote.source if quote.source else '-' }}
                 </span>
               </td>
 
-              <td class="size-px whitespace-nowrap px-6 py-3">
+              <td class="whitespace-nowrap px-6 py-3">
                 <span class="text-sm text-gray-600 dark:text-neutral-400">
                   {% if quote.quote_date %}
                     {{ quote.quote_date }}
@@ -234,7 +250,7 @@
                 </span>
               </td>
 
-              <td class="size-px px-6 py-3">
+              <td class="px-6 py-3">
                 <div class="flex flex-wrap gap-1">
                   {% if quote.tags %}
                     {% for tag in quote.tags[:3] %}
@@ -253,7 +269,7 @@
                 </div>
               </td>
 
-              <td class="size-px whitespace-nowrap px-6 py-3">
+              <td class="whitespace-nowrap px-6 py-3">
                 <div class="flex justify-end items-center gap-x-2">
                   {% if session.role == 'admin' %}
                   <!-- Edit Button (Admin Only) -->

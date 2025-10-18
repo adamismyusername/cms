@@ -37,6 +37,14 @@
               </button>
             </form>
 
+            <!-- Reset Column Widths Button -->
+            <button
+              onclick="resetTableWidths('content-list')"
+              class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            >
+              Reset Columns
+            </button>
+
             {% if session.role == 'admin' %}
             <!-- Add Content Button (Admin Only) -->
             <a
@@ -56,10 +64,17 @@
 
         {% if content and content|length > 0 %}
         <!-- Table -->
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 resizable-table" data-table-name="content-list">
+          <colgroup>
+            <col data-column="title">
+            <col data-column="type">
+            <col data-column="description">
+            <col data-column="date">
+            <col data-column="actions">
+          </colgroup>
           <thead class="bg-gray-50 dark:bg-neutral-800">
             <tr>
-              <th scope="col" class="px-6 py-3 text-start">
+              <th scope="col" class="px-6 py-3 text-start" data-column="title">
                 <div class="flex items-center gap-x-2">
                   <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                     Title
@@ -67,7 +82,7 @@
                 </div>
               </th>
 
-              <th scope="col" class="px-6 py-3 text-start">
+              <th scope="col" class="px-6 py-3 text-start" data-column="type">
                 <div class="flex items-center gap-x-2">
                   <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                     Type
@@ -75,7 +90,7 @@
                 </div>
               </th>
 
-              <th scope="col" class="px-6 py-3 text-start">
+              <th scope="col" class="px-6 py-3 text-start" data-column="description">
                 <div class="flex items-center gap-x-2">
                   <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                     Description
@@ -83,7 +98,7 @@
                 </div>
               </th>
 
-              <th scope="col" class="px-6 py-3 text-start">
+              <th scope="col" class="px-6 py-3 text-start" data-column="date">
                 <div class="flex items-center gap-x-2">
                   <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                     Date
@@ -91,7 +106,7 @@
                 </div>
               </th>
 
-              <th scope="col" class="px-6 py-3 text-end">
+              <th scope="col" class="px-6 py-3 text-end" data-column="actions">
                 <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
                   Actions
                 </span>
@@ -102,13 +117,13 @@
           <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
             {% for item in content %}
             <tr class="hover:bg-gray-50 dark:hover:bg-neutral-700">
-              <td class="size-px whitespace-nowrap px-6 py-3">
+              <td class="whitespace-nowrap px-6 py-3">
                 <span class="text-sm font-medium text-gray-800 dark:text-neutral-200">
                   {{ item.title }}
                 </span>
               </td>
 
-              <td class="size-px whitespace-nowrap px-6 py-3">
+              <td class="whitespace-nowrap px-6 py-3">
                 {% if item.content_type == 'file' %}
                 <span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500">
                   <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -143,19 +158,19 @@
                 {% endif %}
               </td>
 
-              <td class="size-px px-6 py-3">
+              <td class="px-6 py-3">
                 <span class="text-sm text-gray-600 dark:text-neutral-400">
                   {{ item.description[:60] }}{% if item.description and item.description|length > 60 %}...{% endif %}
                 </span>
               </td>
 
-              <td class="size-px whitespace-nowrap px-6 py-3">
+              <td class="whitespace-nowrap px-6 py-3">
                 <span class="text-sm text-gray-600 dark:text-neutral-400">
                   {{ item.created_at[:10] if item.created_at else 'N/A' }}
                 </span>
               </td>
 
-              <td class="size-px whitespace-nowrap px-6 py-3">
+              <td class="whitespace-nowrap px-6 py-3">
                 <div class="flex justify-end items-center gap-x-2">
 
                   {% if item.content_type == 'file' %}
