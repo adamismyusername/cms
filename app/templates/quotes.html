@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Quotes - Goldco CMS{% endblock %}
+
+{% block content %}
+<!-- Card -->
+<div class="flex flex-col">
+  <div class="-m-1.5 overflow-x-auto">
+    <div class="p-1.5 min-w-full inline-block align-middle">
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-neutral-800 dark:border-neutral-700">
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-neutral-700">
+          <div class="grid gap-3 md:flex md:justify-between md:items-center">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
+                Quotes Management
+              </h2>
+              <p class="text-sm text-gray-600 dark:text-neutral-400">
+                Browse and manage quotes
+              </p>
+            </div>
+
+            <div class="inline-flex gap-x-2">
+              <!-- Search Form -->
+              <form action="{{ url_for('search_quotes') }}" method="GET" class="relative">
+                <input
+                  type="text"
+                  name="q"
+                  placeholder="Search quotes..."
+                  class="py-2 px-4 pe-11 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                >
+                <button type="submit" class="absolute inset-y-0 end-0 flex items-center pointer-events-auto pe-3">
+                  <svg class="shrink-0 size-4 text-gray-400 dark:text-neutral-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.3-4.3"/>
+                  </svg>
+                </button>
+              </form>
+
+              {% if session.role == 'admin' %}
+              <!-- Add Quote Button (Admin Only) -->
+              <a
+                href="{{ url_for('new_quote') }}"
+                class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12h14"/>
+                  <path d="M12 5v14"/>
+                </svg>
+                Add Quote
+              </a>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <form method="GET" action="{{ url_for('quotes') }}" id="filterForm">
+              <!-- Author Filter -->
+              <div>
+                <label for="author-filter" class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Filter by Author</label>
+                <select
+                  id="author-filter"
+                  name="author"
+                  onchange="document.getElementById('filterForm').submit()"
+                  class="py-2 px-3 pe-9 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
+                >
+                  <option value="">All Authors</option>
+                  {% for author in authors %}
+                  <option value="{{ author.id }}" {% if selected_author == author.id %}selected{% endif %}>
+                    {{ author.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Source Filter -->
+              <div>
+                <label for="source-filter" class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Filter by Source</label>
+                <select
+                  id="source-filter"
+                  name="source"
+                  onchange="document.getElementById('filterForm').submit()"
+                  class="py-2 px-3 pe-9 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
+                >
+                  <option value="">All Sources</option>
+                  {% for source in sources %}
+                  <option value="{{ source }}" {% if selected_source == source %}selected{% endif %}>
+                    {{ source }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Tags Filter -->
+              <div>
+                <label class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Filter by Tags</label>
+                <div class="relative">
+                  <button
+                    type="button"
+                    id="tags-dropdown-btn"
+                    class="py-2 px-3 pe-9 flex items-center justify-between w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
+                  >
+                    <span>{% if selected_tags %}{{ selected_tags|length }} selected{% else %}All Tags{% endif %}</span>
+                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                  </button>
+                  <div id="tags-dropdown" class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-neutral-800 dark:border-neutral-700 max-h-60 overflow-y-auto">
+                    {% for tag in tags %}
+                    <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-neutral-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="tags"
+                        value="{{ tag }}"
+                        {% if tag in selected_tags %}checked{% endif %}
+                        onchange="document.getElementById('filterForm').submit()"
+                        class="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
+                      >
+                      <span class="text-sm text-gray-800 ms-3 dark:text-neutral-200">{{ tag }}</span>
+                    </label>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Clear Filters -->
+              {% if selected_author or selected_source or selected_tags %}
+              <div class="flex items-end">
+                <a
+                  href="{{ url_for('quotes') }}"
+                  class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                >
+                  Clear Filters
+                </a>
+              </div>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+        <!-- End Header -->
+
+        {% if quotes and quotes|length > 0 %}
+        <!-- Table -->
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
+          <thead class="bg-gray-50 dark:bg-neutral-800">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-start">
+                <div class="flex items-center gap-x-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                    Quote
+                  </span>
+                </div>
+              </th>
+
+              <th scope="col" class="px-6 py-3 text-start">
+                <div class="flex items-center gap-x-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                    Author
+                  </span>
+                </div>
+              </th>
+
+              <th scope="col" class="px-6 py-3 text-start">
+                <div class="flex items-center gap-x-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                    Source
+                  </span>
+                </div>
+              </th>
+
+              <th scope="col" class="px-6 py-3 text-start">
+                <div class="flex items-center gap-x-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                    Date
+                  </span>
+                </div>
+              </th>
+
+              <th scope="col" class="px-6 py-3 text-start">
+                <div class="flex items-center gap-x-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                    Tags
+                  </span>
+                </div>
+              </th>
+
+              <th scope="col" class="px-6 py-3 text-end">
+                <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                  Actions
+                </span>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
+            {% for quote in quotes %}
+            <tr class="hover:bg-gray-50 dark:hover:bg-neutral-700">
+              <td class="size-px px-6 py-3">
+                <span class="text-sm text-gray-800 dark:text-neutral-200">
+                  {% if quote.quote_text|length > 100 %}
+                    {{ quote.quote_text[:100] }}...
+                  {% else %}
+                    {{ quote.quote_text }}
+                  {% endif %}
+                </span>
+              </td>
+
+              <td class="size-px whitespace-nowrap px-6 py-3">
+                <a
+                  href="{{ url_for('author_profile', author_id=quote.author.id) }}"
+                  class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500"
+                >
+                  {{ quote.author.name }}
+                </a>
+              </td>
+
+              <td class="size-px px-6 py-3">
+                <span class="text-sm text-gray-600 dark:text-neutral-400">
+                  {{ quote.source if quote.source else '-' }}
+                </span>
+              </td>
+
+              <td class="size-px whitespace-nowrap px-6 py-3">
+                <span class="text-sm text-gray-600 dark:text-neutral-400">
+                  {% if quote.quote_date %}
+                    {{ quote.quote_date }}
+                  {% elif quote.date_approximation %}
+                    {{ quote.date_approximation }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </span>
+              </td>
+
+              <td class="size-px px-6 py-3">
+                <div class="flex flex-wrap gap-1">
+                  {% if quote.tags %}
+                    {% for tag in quote.tags[:3] %}
+                    <span class="inline-flex items-center gap-1.5 py-0.5 px-2 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500">
+                      {{ tag }}
+                    </span>
+                    {% endfor %}
+                    {% if quote.tags|length > 3 %}
+                    <span class="inline-flex items-center gap-1.5 py-0.5 px-2 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-neutral-700 dark:text-neutral-400">
+                      +{{ quote.tags|length - 3 }}
+                    </span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-sm text-gray-400 dark:text-neutral-500">-</span>
+                  {% endif %}
+                </div>
+              </td>
+
+              <td class="size-px whitespace-nowrap px-6 py-3">
+                <div class="flex justify-end items-center gap-x-2">
+                  {% if session.role == 'admin' %}
+                  <!-- Edit Button (Admin Only) -->
+                  <a
+                    href="{{ url_for('edit_quote', quote_id=quote.id) }}"
+                    class="inline-flex items-center gap-x-1 text-sm text-gray-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium dark:text-neutral-400"
+                  >
+                    Edit
+                  </a>
+
+                  <!-- Delete Button (Admin Only) -->
+                  <form method="POST" action="{{ url_for('delete_quote', quote_id=quote.id) }}" onsubmit="return confirm('Are you sure you want to delete this quote?');" class="inline">
+                    <button
+                      type="submit"
+                      class="inline-flex items-center gap-x-1 text-sm text-red-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium dark:text-red-500"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <!-- End Table -->
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="px-6 py-12 text-center">
+          <div class="max-w-sm mx-auto">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-neutral-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+              <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+            </svg>
+            <h3 class="mb-2 text-xl font-semibold text-gray-800 dark:text-neutral-200">
+              No quotes yet
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-neutral-400 mb-4">
+              Get started by adding your first quote.
+            </p>
+            {% if session.role == 'admin' %}
+            <a
+              href="{{ url_for('new_quote') }}"
+              class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700"
+            >
+              <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"/>
+                <path d="M12 5v14"/>
+              </svg>
+              Add Quote
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        <!-- End Empty State -->
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End Card -->
+
+<!-- JavaScript for Tags Dropdown -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tagsBtn = document.getElementById('tags-dropdown-btn');
+    const tagsDropdown = document.getElementById('tags-dropdown');
+
+    if (tagsBtn && tagsDropdown) {
+      tagsBtn.addEventListener('click', function() {
+        tagsDropdown.classList.toggle('hidden');
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!tagsBtn.contains(event.target) && !tagsDropdown.contains(event.target)) {
+          tagsDropdown.classList.add('hidden');
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}
