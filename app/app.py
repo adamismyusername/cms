@@ -447,12 +447,20 @@ def quotes():
                 all_tags.update(quote['tags'])
         unique_tags = sorted(list(all_tags))
 
+        # Get author name for badge display if author filter is active
+        selected_author_name = None
+        if author_filter:
+            author_match = next((a for a in authors_result.data if a['id'] == author_filter), None)
+            if author_match:
+                selected_author_name = author_match['name']
+
         return render_template('quotes.html',
                              quotes=quotes_data,
                              authors=authors_result.data,
                              sources=unique_sources,
                              tags=unique_tags,
                              selected_author=author_filter,
+                             selected_author_name=selected_author_name,
                              selected_source=source_filter,
                              selected_tags=tags_filter)
     except Exception as e:

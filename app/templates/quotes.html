@@ -22,22 +22,6 @@
             </div>
 
             <div class="inline-flex gap-x-2">
-              <!-- Search Form -->
-              <form action="{{ url_for('search_quotes') }}" method="GET" class="relative">
-                <input
-                  type="text"
-                  name="q"
-                  placeholder="Search quotes..."
-                  class="py-2 px-4 pe-11 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
-                >
-                <button type="submit" class="absolute inset-y-0 end-0 flex items-center pointer-events-auto pe-3">
-                  <svg class="shrink-0 size-4 text-gray-400 dark:text-neutral-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="m21 21-4.3-4.3"/>
-                  </svg>
-                </button>
-              </form>
-
               <!-- Reset Column Widths Button -->
               <button
                 onclick="resetTableWidths('quotes-list')"
@@ -62,90 +46,158 @@
             </div>
           </div>
 
+          <!-- Active Filter Badges -->
+          {% if selected_author or selected_source or selected_tags %}
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium text-gray-600 dark:text-neutral-400">Active filters:</span>
+
+            {% if selected_author and selected_author_name %}
+            <a href="{{ url_for('quotes', source=selected_source, tags=selected_tags) }}" class="inline-flex items-center gap-1.5 py-1 px-2 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-500 dark:hover:bg-blue-900/50">
+              <span>Author: {{ selected_author_name }}</span>
+              <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18"/>
+                <path d="m6 6 12 12"/>
+              </svg>
+            </a>
+            {% endif %}
+
+            {% if selected_source %}
+            <a href="{{ url_for('quotes', author=selected_author, tags=selected_tags) }}" class="inline-flex items-center gap-1.5 py-1 px-2 rounded-full text-xs font-medium bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-500 dark:hover:bg-purple-900/50">
+              <span>Source: {{ selected_source }}</span>
+              <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18"/>
+                <path d="m6 6 12 12"/>
+              </svg>
+            </a>
+            {% endif %}
+
+            {% if selected_tags %}
+              {% for tag in selected_tags %}
+              {% set other_tags = [] %}
+              {% for t in selected_tags %}
+                {% if t != tag %}
+                  {% set _ = other_tags.append(t) %}
+                {% endif %}
+              {% endfor %}
+              <a href="{{ url_for('quotes', author=selected_author, source=selected_source, tags=other_tags) }}" class="inline-flex items-center gap-1.5 py-1 px-2 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-500 dark:hover:bg-green-900/50">
+                <span>Tag: {{ tag }}</span>
+                <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 6 6 18"/>
+                  <path d="m6 6 12 12"/>
+                </svg>
+              </a>
+              {% endfor %}
+            {% endif %}
+
+            <a href="{{ url_for('quotes') }}" class="text-xs text-blue-600 hover:underline dark:text-blue-500">
+              Clear all
+            </a>
+          </div>
+          {% endif %}
+
           <!-- Filters -->
-          <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <form method="GET" action="{{ url_for('quotes') }}" id="filterForm">
-              <!-- Author Filter -->
-              <div>
-                <label for="author-filter" class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Filter by Author</label>
-                <select
-                  id="author-filter"
-                  name="author"
-                  onchange="document.getElementById('filterForm').submit()"
-                  class="py-2 px-3 pe-9 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
-                >
-                  <option value="">All Authors</option>
-                  {% for author in authors %}
-                  <option value="{{ author.id }}" {% if selected_author == author.id %}selected{% endif %}>
-                    {{ author.name }}
-                  </option>
-                  {% endfor %}
-                </select>
-              </div>
+          <form method="GET" action="{{ url_for('quotes') }}" id="filterForm" class="mt-4 flex flex-wrap items-end gap-3 bg-gray-50 dark:bg-neutral-800 rounded-lg p-4">
 
-              <!-- Source Filter -->
-              <div>
-                <label for="source-filter" class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Filter by Source</label>
-                <select
-                  id="source-filter"
-                  name="source"
-                  onchange="document.getElementById('filterForm').submit()"
-                  class="py-2 px-3 pe-9 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
+            <!-- Search Input -->
+            <div class="flex-1 min-w-[200px]">
+              <label for="search-input" class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Search</label>
+              <div class="relative">
+                <input
+                  type="text"
+                  id="search-input"
+                  name="q"
+                  placeholder="Search quotes..."
+                  class="py-2 px-4 pe-11 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
                 >
-                  <option value="">All Sources</option>
-                  {% for source in sources %}
-                  <option value="{{ source }}" {% if selected_source == source %}selected{% endif %}>
-                    {{ source }}
-                  </option>
-                  {% endfor %}
-                </select>
+                <button type="button" onclick="window.location.href='{{ url_for('search_quotes') }}?q=' + document.getElementById('search-input').value" class="absolute inset-y-0 end-0 flex items-center pointer-events-auto pe-3">
+                  <svg class="shrink-0 size-4 text-gray-400 dark:text-neutral-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.3-4.3"/>
+                  </svg>
+                </button>
               </div>
+            </div>
 
-              <!-- Tags Filter -->
-              <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Filter by Tags</label>
-                <div class="relative">
-                  <button
-                    type="button"
-                    id="tags-dropdown-btn"
-                    class="py-2 px-3 pe-9 flex items-center justify-between w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
-                  >
-                    <span>{% if selected_tags %}{{ selected_tags|length }} selected{% else %}All Tags{% endif %}</span>
-                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="m6 9 6 6 6-6"/>
-                    </svg>
-                  </button>
-                  <div id="tags-dropdown" class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-neutral-800 dark:border-neutral-700 max-h-60 overflow-y-auto">
-                    {% for tag in tags %}
-                    <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-neutral-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="tags"
-                        value="{{ tag }}"
-                        {% if tag in selected_tags %}checked{% endif %}
-                        onchange="document.getElementById('filterForm').submit()"
-                        class="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      >
-                      <span class="text-sm text-gray-800 ms-3 dark:text-neutral-200">{{ tag }}</span>
-                    </label>
-                    {% endfor %}
-                  </div>
+            <!-- Author Filter -->
+            <div class="w-48">
+              <label for="author-filter" class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Author</label>
+              <select
+                id="author-filter"
+                name="author"
+                onchange="document.getElementById('filterForm').submit()"
+                class="py-2 px-3 pe-9 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
+              >
+                <option value="">All Authors</option>
+                {% for author in authors %}
+                <option value="{{ author.id }}" {% if selected_author == author.id %}selected{% endif %}>
+                  {{ author.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Source Filter -->
+            <div class="w-48">
+              <label for="source-filter" class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Source</label>
+              <select
+                id="source-filter"
+                name="source"
+                onchange="document.getElementById('filterForm').submit()"
+                class="py-2 px-3 pe-9 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
+              >
+                <option value="">All Sources</option>
+                {% for source in sources %}
+                <option value="{{ source }}" {% if selected_source == source %}selected{% endif %}>
+                  {{ source }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Tags Filter -->
+            <div class="w-48">
+              <label class="block text-xs font-medium text-gray-700 dark:text-neutral-300 mb-1">Tags</label>
+              <div class="relative">
+                <button
+                  type="button"
+                  id="tags-dropdown-btn"
+                  class="py-2 px-3 pe-9 flex items-center justify-between w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
+                >
+                  <span>{% if selected_tags %}{{ selected_tags|length }} selected{% else %}All Tags{% endif %}</span>
+                  <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                </button>
+                <div id="tags-dropdown" class="hidden absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-neutral-800 dark:border-neutral-700 max-h-60 overflow-y-auto">
+                  {% for tag in tags %}
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-neutral-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="tags"
+                      value="{{ tag }}"
+                      {% if tag in selected_tags %}checked{% endif %}
+                      onchange="document.getElementById('filterForm').submit()"
+                      class="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 focus:ring-blue-500 dark:bg-neutral-800 dark:border-neutral-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
+                    >
+                    <span class="text-sm text-gray-800 ms-3 dark:text-neutral-200">{{ tag }}</span>
+                  </label>
+                  {% endfor %}
                 </div>
               </div>
+            </div>
 
-              <!-- Clear Filters -->
-              {% if selected_author or selected_source or selected_tags %}
-              <div class="flex items-end">
-                <a
-                  href="{{ url_for('quotes') }}"
-                  class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                >
-                  Clear Filters
-                </a>
-              </div>
-              {% endif %}
-            </form>
-          </div>
+            <!-- Clear Filters -->
+            {% if selected_author or selected_source or selected_tags %}
+            <div>
+              <a
+                href="{{ url_for('quotes') }}"
+                class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              >
+                Clear Filters
+              </a>
+            </div>
+            {% endif %}
+          </form>
         </div>
         <!-- End Header -->
 
