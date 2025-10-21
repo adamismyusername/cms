@@ -134,8 +134,8 @@
         </div>
 
         <!-- Tags Field -->
-        <div class="mb-6">
-          <label for="tags" class="block text-sm font-medium mb-2 dark:text-white">Tags</label>
+        <div class="mb-4">
+          <label for="tags" class="block text-sm font-medium mb-2 dark:text-white">Manual Tags</label>
           <input
             type="text"
             id="tags"
@@ -146,6 +146,30 @@
           >
           <p class="mt-1 text-xs text-gray-500 dark:text-neutral-500">Separate multiple tags with commas. Tags will be normalized to lowercase.</p>
         </div>
+
+        <!-- Auto-Tags Display (Edit mode only) -->
+        {% if quote and quote.auto_tags %}
+        <div class="mb-6">
+          <label class="block text-sm font-medium mb-2 dark:text-white">
+            Auto-Generated Tags
+            <span class="text-xs font-normal text-gray-500 dark:text-neutral-400">(based on quote content)</span>
+          </label>
+          <div class="flex flex-wrap gap-2 p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-700">
+            {% for tag in quote.auto_tags %}
+            <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500">
+              <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M21 12a9 9 0 1 1-18 0"/>
+              </svg>
+              {{ tag }}
+            </span>
+            {% endfor %}
+          </div>
+          <p class="mt-1 text-xs text-gray-500 dark:text-neutral-500">
+            Auto-tags are generated from keywords in the quote text. They will update automatically when you save changes.
+          </p>
+        </div>
+        {% endif %}
 
         <!-- Action Buttons -->
         <div class="flex justify-end gap-x-2">

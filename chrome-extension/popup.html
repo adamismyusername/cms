@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Save Quote to CMS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Save Quote to CMS</h1>
+
+    <form id="quoteForm">
+      <!-- Quote Text -->
+      <div class="form-group">
+        <label for="quoteText">Quote Text <span class="required">*</span></label>
+        <textarea id="quoteText" name="quoteText" rows="4" required></textarea>
+      </div>
+
+      <!-- Surrounding Context (readonly) -->
+      <div class="form-group">
+        <label for="context">Surrounding Context</label>
+        <textarea id="context" name="context" rows="3" readonly></textarea>
+        <small class="hint">Full paragraph containing the quote (display only)</small>
+      </div>
+
+      <!-- Author (with autocomplete) -->
+      <div class="form-group">
+        <label for="author">Author <span class="required">*</span></label>
+        <input type="text" id="author" name="author" placeholder="Start typing to search authors..." required autocomplete="off">
+        <div id="authorSuggestions" class="suggestions hidden"></div>
+        <input type="hidden" id="authorId" name="authorId">
+        <small class="hint" id="authorHint">Type 2+ characters to search</small>
+      </div>
+
+      <!-- Source URL -->
+      <div class="form-group">
+        <label for="source">Source URL</label>
+        <input type="text" id="source" name="source" placeholder="https://example.com">
+      </div>
+
+      <!-- Quote Date -->
+      <div class="form-group">
+        <label for="quoteDate">Quote Date (optional)</label>
+        <input type="date" id="quoteDate" name="quoteDate">
+      </div>
+
+      <!-- Date Approximation -->
+      <div class="form-group">
+        <label for="dateApproximation">Date Approximation (optional)</label>
+        <input type="text" id="dateApproximation" name="dateApproximation" placeholder="e.g., circa 1995">
+        <small class="hint">Use for approximate dates when exact date is unknown</small>
+      </div>
+
+      <!-- User Notes -->
+      <div class="form-group">
+        <label for="userNotes">Notes (optional)</label>
+        <textarea id="userNotes" name="userNotes" rows="3" placeholder="Why did you save this quote?"></textarea>
+      </div>
+
+      <!-- Error Message -->
+      <div id="errorMessage" class="message error hidden"></div>
+
+      <!-- Success Message -->
+      <div id="successMessage" class="message success hidden"></div>
+
+      <!-- Buttons -->
+      <div class="form-actions">
+        <button type="submit" id="saveBtn" class="btn btn-primary">Save Quote</button>
+        <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
+      </div>
+    </form>
+
+    <!-- Last 5 Quotes (shown after successful save) -->
+    <div id="recentQuotes" class="recent-quotes hidden">
+      <h2>Last 5 Saved Quotes</h2>
+      <div id="recentQuotesList"></div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

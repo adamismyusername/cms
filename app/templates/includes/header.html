@@ -28,6 +28,22 @@
 
       <!-- User Info -->
       <div class="flex items-center gap-x-3">
+        <!-- Get Extension Token Button -->
+        {% if session.get('user') %}
+        <button
+          id="getExtensionTokenBtn"
+          type="button"
+          class="py-1.5 px-3 inline-flex items-center gap-x-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
+          title="Get token for Chrome extension"
+        >
+          <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+            <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+          </svg>
+          Extension Token
+        </button>
+        {% endif %}
+
         <!-- Role Badge -->
         {% if session.get('role') %}
         <span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium {% if session.get('role') == 'admin' %}bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-500{% else %}bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-white{% endif %}">

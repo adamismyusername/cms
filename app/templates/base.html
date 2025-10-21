@@ -54,5 +54,57 @@
   <script src="{{ url_for('static', filename='assets/js/index.js') }}"></script>
   <script src="{{ url_for('static', filename='assets/js/resizable-table.js') }}"></script>
 
+  <!-- Extension Token Button Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const tokenBtn = document.getElementById('getExtensionTokenBtn');
+      if (tokenBtn) {
+        tokenBtn.addEventListener('click', async function() {
+          const btn = this;
+          const originalText = btn.innerHTML;
+
+          // Disable button and show loading
+          btn.disabled = true;
+          btn.innerHTML = '<span class="text-xs">Loading...</span>';
+
+          try {
+            // Call API to get token
+            const response = await fetch('/api/get-extension-token');
+            const data = await response.json();
+
+            if (data.token) {
+              // Copy to clipboard
+              await navigator.clipboard.writeText(data.token);
+
+              // Show success message
+              btn.innerHTML = '<span class="text-xs text-green-600">✓ Copied!</span>';
+
+              // Show alert with instructions
+              alert('Extension token copied to clipboard!\n\nNext steps:\n1. Right-click the Chrome extension icon\n2. Click "Options"\n3. Paste the token and click "Save Token"\n\nThe token will be valid for 7 days.');
+
+              // Reset button after 2 seconds
+              setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+              }, 2000);
+            } else {
+              throw new Error('Failed to get token');
+            }
+          } catch (error) {
+            console.error('Error getting token:', error);
+            btn.innerHTML = '<span class="text-xs text-red-600">Error</span>';
+            alert('Error getting extension token. Please try again.');
+
+            // Reset button after 2 seconds
+            setTimeout(() => {
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+            }, 2000);
+          }
+        });
+      }
+    });
+  </script>
+
 </body>
 </html>

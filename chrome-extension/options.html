@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CMS Quote Capture - Options</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container options-page">
+    <h1>CMS Quote Capture - Setup</h1>
+
+    <div class="instructions">
+      <h2>How to get your auth token:</h2>
+      <ol>
+        <li>Open your CMS at <a href="http://localhost:8090" target="_blank">http://localhost:8090</a></li>
+        <li>Log in to your account</li>
+        <li>Click the "Get Extension Token" button in the header</li>
+        <li>The token will be copied to your clipboard</li>
+        <li>Paste it in the field below and click "Save Token"</li>
+      </ol>
+    </div>
+
+    <form id="optionsForm">
+      <div class="form-group">
+        <label for="authToken">Auth Token <span class="required">*</span></label>
+        <input type="password" id="authToken" name="authToken" placeholder="Paste your auth token here" required>
+        <button type="button" id="toggleToken" class="btn-link">Show</button>
+      </div>
+
+      <div id="statusMessage" class="message hidden"></div>
+
+      <div class="form-actions">
+        <button type="submit" id="saveBtn" class="btn btn-primary">Save Token</button>
+        <button type="button" id="testBtn" class="btn btn-secondary">Test Token</button>
+      </div>
+    </form>
+
+    <div class="token-status">
+      <h3>Status</h3>
+      <div id="tokenStatus">No token saved</div>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

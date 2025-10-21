@@ -1,10 +1,11 @@
-from flask import Flask, render_template, redirect, url_for, request, session, flash, send_from_directory
+from flask import Flask, render_template, redirect, url_for, request, session, flash, send_from_directory, jsonify, make_response
 from functools import wraps
 from supabase import create_client, Client
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta
 import secrets
+import auto_tagger
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
@@ -418,14 +419,24 @@ def quotes():
             query = query.eq('author_id', author_filter)
         if source_filter:
             query = query.eq('source', source_filter)
-        if tags_filter:
-            # Filter by tags - quotes must contain all selected tags
-            for tag in tags_filter:
-                query = query.contains('tags', [tag])
 
         # Execute query
         result = query.order('created_at', desc=True).execute()
         quotes_data = result.data
+
+        # Client-side tag filtering (checks both tags and auto_tags)
+        if tags_filter:
+            filtered_quotes = []
+            for quote in quotes_data:
+                quote_tags = set(quote.get('tags') or [])
+                quote_auto_tags = set(quote.get('auto_tags') or [])
+                all_quote_tags = quote_tags | quote_auto_tags
+
+                # Check if all selected tags are present in either tags or auto_tags
+                if all(tag in all_quote_tags for tag in tags_filter):
+                    filtered_quotes.append(quote)
+
+            quotes_data = filtered_quotes
 
         # Get all authors for filter dropdown
         authors_result = supabase.table('cms_authors')\
@@ -440,11 +451,13 @@ def quotes():
         unique_sources = list(set([s['source'] for s in sources_result.data if s.get('source')]))
         unique_sources.sort()
 
-        # Get all unique tags for filter dropdown
+        # Get all unique tags for filter dropdown (both manual and auto)
         all_tags = set()
-        for quote in supabase.table('cms_quotes').select('tags').execute().data:
+        for quote in supabase.table('cms_quotes').select('tags, auto_tags').execute().data:
             if quote.get('tags'):
-                all_tags.update(quote['tags'])
+                all_tags.update(quote.get('tags') or [])
+            if quote.get('auto_tags'):
+                all_tags.update(quote.get('auto_tags') or [])
         unique_tags = sorted(list(all_tags))
 
         # Get author name for badge display if author filter is active
@@ -511,19 +524,27 @@ def search_quotes():
                     seen_ids.add(quote['id'])
                     unique_quotes.append(quote)
 
-            # Also check tags
+            # Also check tags and auto_tags
             all_quotes_for_tags = supabase.table('cms_quotes')\
                 .select('*, author:cms_authors(id, name)')\
                 .execute()
 
             for quote in all_quotes_for_tags.data:
-                if quote['id'] not in seen_ids and quote.get('tags'):
-                    # Check if query matches any tag
-                    for tag in quote['tags']:
-                        if query.lower() in tag.lower():
-                            unique_quotes.append(quote)
-                            seen_ids.add(quote['id'])
-                            break
+                if quote['id'] not in seen_ids:
+                    # Check if query matches any manual tag
+                    if quote.get('tags'):
+                        for tag in (quote.get('tags') or []):
+                            if query.lower() in tag.lower():
+                                unique_quotes.append(quote)
+                                seen_ids.add(quote['id'])
+                                break
+                    # Check if query matches any auto tag
+                    if quote['id'] not in seen_ids and quote.get('auto_tags'):
+                        for tag in (quote.get('auto_tags') or []):
+                            if query.lower() in tag.lower():
+                                unique_quotes.append(quote)
+                                seen_ids.add(quote['id'])
+                                break
 
             return render_template('search.html', results=unique_quotes, query=query, content_type='quotes')
         except Exception as e:
@@ -622,6 +643,9 @@ def new_quote():
                 flash('Author is required', 'error')
                 return redirect(url_for('new_quote'))
 
+            # Generate auto-tags
+            auto_tags = auto_tagger.generate_auto_tags(quote_text)
+
             # Create quote
             quote_data = {
                 'quote_text': quote_text,
@@ -630,6 +654,8 @@ def new_quote():
                 'quote_date': quote_date if quote_date else None,
                 'date_approximation': date_approximation if date_approximation else None,
                 'tags': tags,
+                'auto_tags': auto_tags,
+                'removed_auto_tags': [],
                 'created_by': session['user']['id']
             }
 
@@ -701,6 +727,17 @@ def edit_quote(quote_id):
             if tags_input:
                 tags = [tag.strip().lower() for tag in tags_input.split(',') if tag.strip()]
 
+            # Get existing removed_auto_tags to respect user's choices
+            existing_quote = supabase.table('cms_quotes')\
+                .select('removed_auto_tags')\
+                .eq('id', quote_id)\
+                .execute()
+
+            removed_auto_tags = (existing_quote.data[0].get('removed_auto_tags') or []) if existing_quote.data else []
+
+            # Regenerate auto-tags (respecting removed tags)
+            auto_tags = auto_tagger.generate_auto_tags(quote_text, removed_auto_tags)
+
             # Update quote
             update_data = {
                 'quote_text': quote_text,
@@ -708,7 +745,8 @@ def edit_quote(quote_id):
                 'source': source if source else None,
                 'quote_date': quote_date if quote_date else None,
                 'date_approximation': date_approximation if date_approximation else None,
-                'tags': tags
+                'tags': tags,
+                'auto_tags': auto_tags
             }
 
             supabase.table('cms_quotes')\
@@ -765,6 +803,92 @@ def delete_quote(quote_id):
         flash(f'Error deleting quote: {str(e)}', 'error')
 
     return redirect(url_for('quotes'))
+
+# ==================== AUTO-TAGGING ADMIN ROUTES ====================
+
+@app.route('/quotes/admin/auto-tags')
+@admin_required
+def auto_tag_admin():
+    """Admin page for managing auto-tagging"""
+    try:
+        # Get statistics
+        all_quotes = supabase.table('cms_quotes')\
+            .select('auto_tags')\
+            .execute()
+
+        stats = auto_tagger.get_tag_statistics(all_quotes.data)
+
+        return render_template('auto_tag_admin.html', stats=stats)
+    except Exception as e:
+        flash(f'Error loading auto-tag admin: {str(e)}', 'error')
+        return redirect(url_for('quotes'))
+
+@app.route('/quotes/admin/reload-keywords', methods=['POST'])
+@admin_required
+def reload_keywords():
+    """Reload keyword mappings from CSV file"""
+    try:
+        count = auto_tagger.reload_keyword_mappings()
+
+        # Log activity
+        supabase.table('cms_activity_log').insert({
+            'user_id': session['user']['id'],
+            'action': 'auto_tag_keywords_reloaded',
+            'details': f'Reloaded {count} keyword mappings'
+        }).execute()
+
+        flash(f'Successfully reloaded {count} keyword mappings', 'success')
+    except Exception as e:
+        flash(f'Error reloading keywords: {str(e)}', 'error')
+
+    return redirect(url_for('auto_tag_admin'))
+
+@app.route('/quotes/admin/reprocess-all', methods=['POST'])
+@admin_required
+def reprocess_all_quotes():
+    """Reprocess all quotes to regenerate auto-tags"""
+    try:
+        # Get all quotes
+        all_quotes = supabase.table('cms_quotes')\
+            .select('id, quote_text, removed_auto_tags')\
+            .execute()
+
+        processed_count = 0
+        error_count = 0
+
+        for quote in all_quotes.data:
+            try:
+                # Generate new auto-tags
+                removed_tags = quote.get('removed_auto_tags') or []
+                new_auto_tags = auto_tagger.generate_auto_tags(quote['quote_text'], removed_tags)
+
+                # Update the quote
+                supabase.table('cms_quotes')\
+                    .update({'auto_tags': new_auto_tags})\
+                    .eq('id', quote['id'])\
+                    .execute()
+
+                processed_count += 1
+            except Exception as e:
+                print(f"Error processing quote {quote['id']}: {e}")
+                error_count += 1
+
+        # Log activity
+        supabase.table('cms_activity_log').insert({
+            'user_id': session['user']['id'],
+            'action': 'auto_tag_bulk_reprocess',
+            'details': f'Reprocessed {processed_count} quotes ({error_count} errors)'
+        }).execute()
+
+        if error_count > 0:
+            flash(f'Reprocessed {processed_count} quotes with {error_count} errors', 'warning')
+        else:
+            flash(f'Successfully reprocessed {processed_count} quotes', 'success')
+
+    except Exception as e:
+        flash(f'Error reprocessing quotes: {str(e)}', 'error')
+
+    return redirect(url_for('auto_tag_admin'))
 
 # ==================== AUTHOR ROUTES ====================
 
@@ -909,6 +1033,268 @@ def edit_author(author_id):
         except Exception as e:
             flash(f'Error updating author: {str(e)}', 'error')
             return redirect(url_for('edit_author', author_id=author_id))
+
+# ==================== API ENDPOINTS FOR CHROME EXTENSION ====================
+
+# CORS decorator for API endpoints
+def add_cors_headers(response):
+    """Add CORS headers to response"""
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
+
+# API authentication decorator
+def api_auth_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            response = jsonify({'error': 'Missing or invalid authorization header'})
+            response.status_code = 401
+            return add_cors_headers(response)
+
+        token = auth_header.replace('Bearer ', '')
+
+        # Validate token - it's just the user's session token
+        # Check if it exists in our extension_tokens table or validate session
+        try:
+            # For simplicity, we'll store extension tokens in a simple dict in session
+            # In production, you'd want to store these in a database table
+            result = supabase.table('cms_extension_tokens')\
+                .select('user_id')\
+                .eq('token', token)\
+                .single()\
+                .execute()
+
+            if not result.data:
+                response = jsonify({'error': 'Invalid token'})
+                response.status_code = 401
+                return add_cors_headers(response)
+
+            # Add user_id to request context
+            request.user_id = result.data['user_id']
+
+        except Exception as e:
+            response = jsonify({'error': 'Token validation failed'})
+            response.status_code = 401
+            return add_cors_headers(response)
+
+        return f(*args, **kwargs)
+    return decorated
+
+# Handle OPTIONS requests for CORS preflight
+@app.route('/api/<path:path>', methods=['OPTIONS'])
+def handle_options(path):
+    response = make_response('', 204)
+    return add_cors_headers(response)
+
+@app.route('/api/get-extension-token', methods=['GET'])
+@login_required
+def get_extension_token():
+    """Generate and return an auth token for the Chrome extension"""
+    try:
+        # Generate a random token
+        token = secrets.token_urlsafe(32)
+
+        # Store token in database (you'll need to create this table)
+        # For now, we'll try to insert, and if the table doesn't exist, we'll note it
+        try:
+            supabase.table('cms_extension_tokens').insert({
+                'token': token,
+                'user_id': session['user']['id'],
+                'created_at': datetime.now().isoformat()
+            }).execute()
+        except Exception as e:
+            # Table might not exist - create a simple in-memory solution for now
+            print(f"Warning: Could not store token in database: {e}")
+            # In this case, we'll just return the session-based approach
+            token = f"session_{session['user']['id']}_{secrets.token_urlsafe(16)}"
+
+        response = jsonify({
+            'token': token,
+            'user_id': session['user']['id'],
+            'email': session['user']['email']
+        })
+        return add_cors_headers(response)
+
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        response.status_code = 500
+        return add_cors_headers(response)
+
+@app.route('/api/validate-token', methods=['GET'])
+def validate_token():
+    """Validate an extension token"""
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            response = jsonify({'valid': False, 'error': 'Missing authorization header'})
+            return add_cors_headers(response)
+
+        token = auth_header.replace('Bearer ', '')
+
+        # Check if token exists in database
+        try:
+            result = supabase.table('cms_extension_tokens')\
+                .select('user_id')\
+                .eq('token', token)\
+                .single()\
+                .execute()
+
+            if result.data:
+                # Token exists - validation successful
+                response = jsonify({
+                    'valid': True,
+                    'user_id': result.data['user_id']
+                })
+                return add_cors_headers(response)
+        except Exception as e:
+            # Log the error for debugging
+            print(f"Token validation error: {e}")
+
+        response = jsonify({'valid': False})
+        return add_cors_headers(response)
+
+    except Exception as e:
+        print(f"Validation endpoint error: {e}")
+        response = jsonify({'valid': False, 'error': str(e)})
+        return add_cors_headers(response)
+
+@app.route('/api/quote', methods=['POST'])
+@api_auth_required
+def api_create_quote():
+    """Create a new quote via API"""
+    try:
+        data = request.get_json()
+
+        # Validate required fields
+        if not data.get('quote_text'):
+            response = jsonify({'error': 'quote_text is required'})
+            response.status_code = 400
+            return add_cors_headers(response)
+
+        # Handle author - either existing or new
+        author_id = None
+
+        if data.get('author_id'):
+            author_id = data['author_id']
+        elif data.get('author_name'):
+            # Check if author exists
+            existing_author = supabase.table('cms_authors')\
+                .select('id')\
+                .ilike('name', data['author_name'])\
+                .execute()
+
+            if existing_author.data:
+                author_id = existing_author.data[0]['id']
+            else:
+                # Create new author
+                new_author = supabase.table('cms_authors').insert({
+                    'name': data['author_name']
+                }).execute()
+                author_id = new_author.data[0]['id']
+        else:
+            response = jsonify({'error': 'author_id or author_name is required'})
+            response.status_code = 400
+            return add_cors_headers(response)
+
+        # Generate auto-tags
+        auto_tags = auto_tagger.generate_auto_tags(data['quote_text'])
+
+        # Create quote
+        quote_data = {
+            'quote_text': data['quote_text'],
+            'author_id': author_id,
+            'source': data.get('source'),
+            'quote_date': data.get('quote_date'),
+            'date_approximation': data.get('date_approximation'),
+            'user_notes': data.get('user_notes'),
+            'surrounding_context': data.get('surrounding_context'),
+            'auto_tags': auto_tags,
+            'removed_auto_tags': [],
+            'created_by': request.user_id
+        }
+
+        result = supabase.table('cms_quotes').insert(quote_data).execute()
+
+        # Log activity
+        supabase.table('cms_activity_log').insert({
+            'user_id': request.user_id,
+            'action': 'quote_created_via_extension',
+            'details': f'Created quote via extension: {data["quote_text"][:50]}...'
+        }).execute()
+
+        response = jsonify({
+            'success': True,
+            'quote_id': result.data[0]['id'],
+            'message': 'Quote saved successfully'
+        })
+        return add_cors_headers(response)
+
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        response.status_code = 500
+        return add_cors_headers(response)
+
+@app.route('/api/authors/search', methods=['GET'])
+@api_auth_required
+def api_search_authors():
+    """Search for authors"""
+    try:
+        query = request.args.get('q', '').strip()
+
+        if len(query) < 2:
+            response = jsonify({'authors': []})
+            return add_cors_headers(response)
+
+        # Search authors
+        result = supabase.table('cms_authors')\
+            .select('id, name')\
+            .ilike('name', f'%{query}%')\
+            .order('name')\
+            .limit(10)\
+            .execute()
+
+        response = jsonify({'authors': result.data})
+        return add_cors_headers(response)
+
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        response.status_code = 500
+        return add_cors_headers(response)
+
+@app.route('/api/quotes/recent', methods=['GET'])
+@api_auth_required
+def api_recent_quotes():
+    """Get recent quotes for the current user"""
+    try:
+        # Get last 5 quotes by this user
+        result = supabase.table('cms_quotes')\
+            .select('id, quote_text, created_at, author:cms_authors(name)')\
+            .eq('created_by', request.user_id)\
+            .order('created_at', desc=True)\
+            .limit(5)\
+            .execute()
+
+        # Format response
+        quotes = []
+        for quote in result.data:
+            quotes.append({
+                'id': quote['id'],
+                'quote_text': quote['quote_text'],
+                'author_name': quote['author']['name'] if quote.get('author') else 'Unknown',
+                'created_at': quote['created_at']
+            })
+
+        response = jsonify({'quotes': quotes})
+        return add_cors_headers(response)
+
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        response.status_code = 500
+        return add_cors_headers(response)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)
