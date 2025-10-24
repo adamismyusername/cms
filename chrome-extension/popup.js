@@ -12,10 +12,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   authToken = storage.authToken;
 
   if (!authToken) {
-    showError('Please set up your auth token in the extension options first.');
+    showStatusBanner('invalid', 'No authentication token configured. Please set up your token.', true);
     document.getElementById('saveBtn').disabled = true;
     return;
   }
+
+  // Validate token with API
+  const isValid = await validateAuthToken();
+  if (!isValid) {
+    showStatusBanner('invalid', 'Authentication token is invalid or expired. Please update your token.', true);
+    document.getElementById('saveBtn').disabled = true;
+    return;
+  }
+
+  // Token is valid - show success banner
+  showStatusBanner('valid', 'Authentication active - Ready to save quotes', false);
 
   // Load pending quote data from storage
   const local = await chrome.storage.local.get(['pendingQuote']);
@@ -48,6 +59,12 @@ function setupEventListeners() {
     window.close();
   });
 
+  // Open options button (in status banner)
+  const openOptionsBtn = document.getElementById('openOptionsBtn');
+  if (openOptionsBtn) {
+    openOptionsBtn.addEventListener('click', openExtensionOptions);
+  }
+
   // Author autocomplete
   const authorInput = document.getElementById('author');
   authorInput.addEventListener('input', handleAuthorInput);
@@ -57,6 +74,70 @@ function setupEventListeners() {
       document.getElementById('authorSuggestions').classList.add('hidden');
     }, 200);
   });
+}
+
+/**
+ * Validate auth token with API
+ */
+async function validateAuthToken() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    return data.valid === true;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
+}
+
+/**
+ * Show status banner
+ */
+function showStatusBanner(type, message, showOpenOptions) {
+  const banner = document.getElementById('tokenStatusBanner');
+  const textDiv = document.getElementById('tokenStatusText');
+  const actionsDiv = document.getElementById('tokenStatusActions');
+
+  // Set message
+  textDiv.textContent = message;
+
+  // Set styling based on type
+  banner.className = 'status-banner ' + type;
+
+  // Show/hide open options button
+  if (showOpenOptions) {
+    actionsDiv.classList.remove('hidden');
+  } else {
+    actionsDiv.classList.add('hidden');
+  }
+
+  // Show banner
+  banner.classList.remove('hidden');
+}
+
+/**
+ * Handle authentication errors (401)
+ */
+function handleAuthError() {
+  showStatusBanner('invalid', 'Your authentication token has expired or is invalid. Please update your token.', true);
+  showError('Authentication failed. Please update your token in extension options.');
+  document.getElementById('saveBtn').disabled = true;
+}
+
+/**
+ * Open extension options page
+ */
+function openExtensionOptions() {
+  chrome.runtime.openOptionsPage();
 }
 
 /**
@@ -98,6 +179,13 @@ async function searchAuthors(query) {
         'Authorization': `Bearer ${authToken}`
       }
     });
+
+    // Check for authentication error
+    if (response.status === 401) {
+      handleAuthError();
+      document.getElementById('authorHint').textContent = 'Authentication expired';
+      return;
+    }
 
     if (!response.ok) {
       throw new Error('Failed to search authors');
@@ -212,6 +300,12 @@ async function handleSubmit(e) {
       body: JSON.stringify(quoteData)
     });
 
+    // Check for authentication error
+    if (response.status === 401) {
+      handleAuthError();
+      return;
+    }
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Failed to save quote');
@@ -255,6 +349,12 @@ async function loadRecentQuotes() {
         'Authorization': `Bearer ${authToken}`
       }
     });
+
+    // Check for authentication error
+    if (response.status === 401) {
+      handleAuthError();
+      return;
+    }
 
     if (!response.ok) {
       throw new Error('Failed to load recent quotes');

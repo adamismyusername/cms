@@ -409,34 +409,115 @@ def quotes():
         author_filter = request.args.get('author')
         source_filter = request.args.get('source')
         tags_filter = request.args.getlist('tags')
+        search_query = request.args.get('q', '').strip()
 
-        # Base query with author join
-        query = supabase.table('cms_quotes')\
-            .select('*, author:cms_authors!left(id, name)')
+        # If search query is provided, perform search
+        if search_query:
+            seen_ids = set()
+            quotes_data = []
 
-        # Apply filters
-        if author_filter:
-            query = query.eq('author_id', author_filter)
-        if source_filter:
-            query = query.eq('source', source_filter)
+            # 1. Search in quote text
+            quote_text_results = supabase.table('cms_quotes')\
+                .select('*, author:cms_authors!left(id, name)')\
+                .ilike('quote_text', f'%{search_query}%')\
+                .execute()
 
-        # Execute query
-        result = query.order('created_at', desc=True).execute()
-        quotes_data = result.data
+            for quote in quote_text_results.data:
+                if quote['id'] not in seen_ids:
+                    seen_ids.add(quote['id'])
+                    quotes_data.append(quote)
 
-        # Client-side tag filtering (checks both tags and auto_tags)
-        if tags_filter:
-            filtered_quotes = []
-            for quote in quotes_data:
-                quote_tags = set(quote.get('tags') or [])
-                quote_auto_tags = set(quote.get('auto_tags') or [])
-                all_quote_tags = quote_tags | quote_auto_tags
+            # 2. Search in source
+            source_results = supabase.table('cms_quotes')\
+                .select('*, author:cms_authors!left(id, name)')\
+                .ilike('source', f'%{search_query}%')\
+                .execute()
 
-                # Check if all selected tags are present in either tags or auto_tags
-                if all(tag in all_quote_tags for tag in tags_filter):
-                    filtered_quotes.append(quote)
+            for quote in source_results.data:
+                if quote['id'] not in seen_ids:
+                    seen_ids.add(quote['id'])
+                    quotes_data.append(quote)
 
-            quotes_data = filtered_quotes
+            # 3. Search in author names
+            authors_with_query = supabase.table('cms_authors')\
+                .select('id')\
+                .ilike('name', f'%{search_query}%')\
+                .execute()
+
+            author_ids = [a['id'] for a in authors_with_query.data]
+            if author_ids:
+                for author_id in author_ids:
+                    author_quotes = supabase.table('cms_quotes')\
+                        .select('*, author:cms_authors!left(id, name)')\
+                        .eq('author_id', author_id)\
+                        .execute()
+
+                    for quote in author_quotes.data:
+                        if quote['id'] not in seen_ids:
+                            seen_ids.add(quote['id'])
+                            quotes_data.append(quote)
+
+            # 4. Search in tags and auto_tags
+            all_quotes_for_tags = supabase.table('cms_quotes')\
+                .select('*, author:cms_authors!left(id, name)')\
+                .execute()
+
+            for quote in all_quotes_for_tags.data:
+                if quote['id'] not in seen_ids:
+                    match_found = False
+
+                    # Check manual tags
+                    if quote.get('tags'):
+                        for tag in quote.get('tags', []):
+                            if search_query.lower() in tag.lower():
+                                match_found = True
+                                break
+
+                    # Check auto tags
+                    if not match_found and quote.get('auto_tags'):
+                        for tag in quote.get('auto_tags', []):
+                            if search_query.lower() in tag.lower():
+                                match_found = True
+                                break
+
+                    if match_found:
+                        seen_ids.add(quote['id'])
+                        quotes_data.append(quote)
+        else:
+            # Normal filtering (no search query)
+            # Base query with author join
+            query = supabase.table('cms_quotes')\
+                .select('*, author:cms_authors!left(id, name)')
+
+            # Apply filters
+            if author_filter:
+                query = query.eq('author_id', author_filter)
+            if source_filter:
+                query = query.eq('source', source_filter)
+
+            # Execute query
+            result = query.order('created_at', desc=True).execute()
+            quotes_data = result.data
+
+            # Client-side tag filtering (checks both tags and auto_tags)
+            if tags_filter:
+                filtered_quotes = []
+                # Convert filter tags to lowercase for case-insensitive matching
+                tags_filter_lower = [tag.lower() for tag in tags_filter]
+
+                for quote in quotes_data:
+                    quote_tags = set(quote.get('tags') or [])
+                    quote_auto_tags = set(quote.get('auto_tags') or [])
+                    all_quote_tags = quote_tags | quote_auto_tags
+
+                    # Convert quote tags to lowercase for comparison
+                    all_quote_tags_lower = {tag.lower() for tag in all_quote_tags}
+
+                    # Check if all selected tags are present in either tags or auto_tags (case-insensitive)
+                    if all(tag in all_quote_tags_lower for tag in tags_filter_lower):
+                        filtered_quotes.append(quote)
+
+                quotes_data = filtered_quotes
 
         # Get all authors for filter dropdown
         authors_result = supabase.table('cms_authors')\
@@ -483,74 +564,9 @@ def quotes():
 @app.route('/quotes/search')
 @login_required
 def search_quotes():
-    """Search quotes by text, author, source, or tags"""
+    """Search quotes - redirects to main quotes page with search parameter"""
     query = request.args.get('q', '')
-    if query:
-        try:
-            # Search across quote_text, author name, source, and tags
-            # Note: Supabase doesn't easily support cross-table text search in one query,
-            # so we'll do multiple queries and combine results
-
-            # Search in quote text, source
-            quotes_result = supabase.table('cms_quotes')\
-                .select('*, author:cms_authors(id, name)')\
-                .or_(f"quote_text.ilike.%{query}%,source.ilike.%{query}%")\
-                .order('created_at', desc=True)\
-                .execute()
-
-            # Search in author names
-            authors_with_query = supabase.table('cms_authors')\
-                .select('id')\
-                .ilike('name', f'%{query}%')\
-                .execute()
-
-            # Get quotes by matching authors
-            author_ids = [a['id'] for a in authors_with_query.data]
-            author_quotes = []
-            if author_ids:
-                for author_id in author_ids:
-                    aq_result = supabase.table('cms_quotes')\
-                        .select('*, author:cms_authors(id, name)')\
-                        .eq('author_id', author_id)\
-                        .execute()
-                    author_quotes.extend(aq_result.data)
-
-            # Combine results (remove duplicates by id)
-            all_quotes = quotes_result.data + author_quotes
-            seen_ids = set()
-            unique_quotes = []
-            for quote in all_quotes:
-                if quote['id'] not in seen_ids:
-                    seen_ids.add(quote['id'])
-                    unique_quotes.append(quote)
-
-            # Also check tags and auto_tags
-            all_quotes_for_tags = supabase.table('cms_quotes')\
-                .select('*, author:cms_authors(id, name)')\
-                .execute()
-
-            for quote in all_quotes_for_tags.data:
-                if quote['id'] not in seen_ids:
-                    # Check if query matches any manual tag
-                    if quote.get('tags'):
-                        for tag in (quote.get('tags') or []):
-                            if query.lower() in tag.lower():
-                                unique_quotes.append(quote)
-                                seen_ids.add(quote['id'])
-                                break
-                    # Check if query matches any auto tag
-                    if quote['id'] not in seen_ids and quote.get('auto_tags'):
-                        for tag in (quote.get('auto_tags') or []):
-                            if query.lower() in tag.lower():
-                                unique_quotes.append(quote)
-                                seen_ids.add(quote['id'])
-                                break
-
-            return render_template('search.html', results=unique_quotes, query=query, content_type='quotes')
-        except Exception as e:
-            flash(f'Search error: {str(e)}', 'error')
-            return render_template('search.html', results=[], query=query, content_type='quotes')
-    return render_template('search.html', results=[], query='', content_type='quotes')
+    return redirect(url_for('quotes', q=query))
 
 @app.route('/quotes/<quote_id>')
 @login_required
@@ -782,27 +798,106 @@ def delete_quote(quote_id):
         if result.data:
             quote_text = result.data[0]['quote_text']
 
-            # Delete quote
-            supabase.table('cms_quotes')\
+            # Delete quote and verify deletion
+            delete_result = supabase.table('cms_quotes')\
                 .delete()\
                 .eq('id', quote_id)\
                 .execute()
 
-            # Log activity
-            supabase.table('cms_activity_log').insert({
-                'user_id': session['user']['id'],
-                'action': 'quote_deleted',
-                'details': f'Deleted quote: {quote_text[:50]}...'
-            }).execute()
+            # Verify the quote was actually deleted
+            verify_result = supabase.table('cms_quotes')\
+                .select('id')\
+                .eq('id', quote_id)\
+                .execute()
 
-            flash('Quote deleted successfully', 'success')
+            if verify_result.data and len(verify_result.data) > 0:
+                # Quote still exists - deletion failed
+                flash('Error: Quote deletion failed. This may be due to database permissions. Please contact your administrator.', 'error')
+                print(f"DEBUG: Quote {quote_id} deletion failed - quote still exists after delete operation")
+            else:
+                # Quote successfully deleted
+                # Log activity
+                try:
+                    supabase.table('cms_activity_log').insert({
+                        'user_id': session['user']['id'],
+                        'action': 'quote_deleted',
+                        'details': f'Deleted quote: {quote_text[:50]}...'
+                    }).execute()
+                except Exception as log_error:
+                    print(f"Warning: Failed to log deletion: {log_error}")
+
+                flash('Quote deleted successfully', 'success')
         else:
             flash('Quote not found', 'error')
 
     except Exception as e:
         flash(f'Error deleting quote: {str(e)}', 'error')
+        print(f"DEBUG: Exception during quote deletion: {str(e)}")
 
     return redirect(url_for('quotes'))
+
+@app.route('/quotes/<quote_id>/remove-auto-tag', methods=['POST'])
+@admin_required
+def remove_auto_tag(quote_id):
+    """Remove an auto-tag from a quote (admin only)"""
+    try:
+        data = request.get_json()
+        tag_to_remove = data.get('tag')
+
+        if not tag_to_remove:
+            return jsonify({'success': False, 'error': 'Tag is required'}), 400
+
+        # Get current quote data
+        quote_result = supabase.table('cms_quotes')\
+            .select('auto_tags, removed_auto_tags')\
+            .eq('id', quote_id)\
+            .execute()
+
+        if not quote_result.data:
+            return jsonify({'success': False, 'error': 'Quote not found'}), 404
+
+        quote = quote_result.data[0]
+        current_auto_tags = quote.get('auto_tags') or []
+        current_removed_tags = quote.get('removed_auto_tags') or []
+
+        # Normalize tag (lowercase)
+        tag_to_remove_lower = tag_to_remove.lower()
+
+        # Check if tag exists in auto_tags
+        if tag_to_remove_lower not in [t.lower() for t in current_auto_tags]:
+            return jsonify({'success': False, 'error': 'Tag not found in auto_tags'}), 400
+
+        # Remove from auto_tags
+        new_auto_tags = [t for t in current_auto_tags if t.lower() != tag_to_remove_lower]
+
+        # Add to removed_auto_tags if not already there
+        if tag_to_remove_lower not in [t.lower() for t in current_removed_tags]:
+            new_removed_tags = current_removed_tags + [tag_to_remove_lower]
+        else:
+            new_removed_tags = current_removed_tags
+
+        # Update quote
+        update_data = {
+            'auto_tags': new_auto_tags,
+            'removed_auto_tags': new_removed_tags
+        }
+
+        supabase.table('cms_quotes')\
+            .update(update_data)\
+            .eq('id', quote_id)\
+            .execute()
+
+        # Log activity
+        supabase.table('cms_activity_log').insert({
+            'user_id': session['user']['id'],
+            'action': 'auto_tag_removed',
+            'details': f'Removed auto-tag "{tag_to_remove}" from quote {quote_id}'
+        }).execute()
+
+        return jsonify({'success': True, 'message': 'Auto-tag removed successfully'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ==================== AUTO-TAGGING ADMIN ROUTES ====================
 

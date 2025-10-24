@@ -5,10 +5,18 @@ const API_BASE_URL = 'http://localhost:8090';
 // Initialize options page
 document.addEventListener('DOMContentLoaded', async () => {
   // Load saved token if exists
-  const storage = await chrome.storage.sync.get(['authToken']);
+  const storage = await chrome.storage.sync.get(['authToken', 'lastValidated']);
   if (storage.authToken) {
     document.getElementById('authToken').value = storage.authToken;
-    updateStatus('Token saved', 'success');
+
+    // Check if we have last validation timestamp
+    const lastValidated = storage.lastValidated;
+    if (lastValidated) {
+      const timeAgo = getTimeAgo(new Date(lastValidated));
+      updateStatus(`Token saved (validated ${timeAgo})`, 'success');
+    } else {
+      updateStatus('Token saved (not yet validated)', 'success');
+    }
   }
 
   // Set up event listeners
@@ -49,15 +57,20 @@ async function handleSave(e) {
 
   try {
     // Validate token with API
-    const isValid = await validateToken(token);
+    const validationResult = await validateToken(token);
 
-    if (isValid) {
-      // Save to Chrome storage
-      await chrome.storage.sync.set({ authToken: token });
+    if (validationResult.valid) {
+      // Save to Chrome storage with timestamp
+      await chrome.storage.sync.set({
+        authToken: token,
+        lastValidated: new Date().toISOString()
+      });
       showMessage('Token saved and validated successfully!', 'success');
-      updateStatus('Token active and valid', 'success');
+      updateStatus('Token active and valid (just now)', 'success');
     } else {
-      showMessage('Token is invalid. Please check and try again.', 'error');
+      // Show specific error message
+      const errorMsg = validationResult.error || 'Token is invalid. Please check and try again.';
+      showMessage(errorMsg, 'error');
       updateStatus('Invalid token', 'error');
     }
   } catch (error) {
@@ -85,13 +98,14 @@ async function handleTest() {
   testBtn.textContent = 'Testing...';
 
   try {
-    const isValid = await validateToken(token);
+    const validationResult = await validateToken(token);
 
-    if (isValid) {
+    if (validationResult.valid) {
       showMessage('Token is valid!', 'success');
-      updateStatus('Token is valid', 'success');
+      updateStatus('Token is valid (just tested)', 'success');
     } else {
-      showMessage('Token is invalid', 'error');
+      const errorMsg = validationResult.error || 'Token is invalid';
+      showMessage(errorMsg, 'error');
       updateStatus('Invalid token', 'error');
     }
   } catch (error) {
@@ -114,15 +128,28 @@ async function validateToken(token) {
       }
     });
 
+    if (response.status === 401) {
+      return {
+        valid: false,
+        error: 'Token is unauthorized or has expired. Please generate a new token from the CMS.'
+      };
+    }
+
     if (!response.ok) {
-      return false;
+      return {
+        valid: false,
+        error: `Server error (${response.status}). Please try again.`
+      };
     }
 
     const data = await response.json();
-    return data.valid === true;
+    return {
+      valid: data.valid === true,
+      error: data.error || null
+    };
   } catch (error) {
     console.error('Validation error:', error);
-    throw new Error('Unable to connect to CMS. Make sure it is running.');
+    throw new Error('Unable to connect to CMS. Make sure it is running at http://localhost:8090');
   }
 }
 
@@ -159,4 +186,23 @@ function updateStatus(message, type) {
   const statusDiv = document.getElementById('tokenStatus');
   statusDiv.textContent = message;
   statusDiv.className = type;
+}
+
+/**
+ * Get human-readable time ago string
+ */
+function getTimeAgo(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'just now';
+  if (diffMins === 1) return '1 minute ago';
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  if (diffHours === 1) return '1 hour ago';
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
 }
