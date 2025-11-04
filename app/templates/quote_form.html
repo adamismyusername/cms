@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}{% if quote %}Edit Quote{% else %}New Quote{% endif %} - Goldco CMS{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-5">
+  <h1 class="text-2xl font-semibold text-gray-800 dark:text-neutral-200">
+    {% if quote %}Edit Quote{% else %}Add New Quote{% endif %}
+  </h1>
+  <p class="text-sm text-gray-600 dark:text-neutral-400">
+    {% if quote %}Update the quote details below{% else %}Create a new quote entry{% endif %}
+  </p>
+</div>
+
+<!-- Quote Form Card -->
+<div class="max-w-4xl">
+  <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
+    <div class="p-6 sm:p-8">
+      <form method="POST" action="{% if quote %}{{ url_for('edit_quote', quote_id=quote.id) }}{% else %}{{ url_for('new_quote') }}{% endif %}">
+
+        <!-- Quote Text Field -->
+        <div class="mb-4">
+          <label for="quote_text" class="block text-sm font-medium mb-2 dark:text-white">
+            Quote <span class="text-red-500">*</span>
+          </label>
+          <textarea
+            id="quote_text"
+            name="quote_text"
+            rows="5"
+            required
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="Enter the quote text..."
+          >{% if quote %}{{ quote.quote_text }}{% endif %}</textarea>
+        </div>
+
+        <!-- Author Selection -->
+        <div class="mb-4">
+          <label for="author_id" class="block text-sm font-medium mb-2 dark:text-white">
+            Author <span class="text-red-500">*</span>
+          </label>
+          <select
+            id="author_id"
+            name="author_id"
+            required
+            class="py-3 px-4 pe-9 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:focus:ring-neutral-600"
+          >
+            <option value="">Select an author...</option>
+            {% for author in authors %}
+            <option value="{{ author.id }}" {% if quote and quote.author_id == author.id %}selected{% endif %}>
+              {{ author.name }}
+            </option>
+            {% endfor %}
+            {% if not quote %}
+            <option value="new">+ Add New Author</option>
+            {% endif %}
+          </select>
+        </div>
+
+        <!-- New Author Fields (Hidden by default, shown when "Add New Author" is selected) -->
+        <div id="new-author-fields" class="mb-4 hidden">
+          <div class="p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+            <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-400 mb-3">New Author Details</h3>
+
+            <div class="mb-3">
+              <label for="new_author_name" class="block text-sm font-medium mb-2 dark:text-white">
+                Author Name <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="new_author_name"
+                name="new_author_name"
+                class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                placeholder="Enter author name"
+              >
+            </div>
+
+            <div>
+              <label for="new_author_description" class="block text-sm font-medium mb-2 dark:text-white">
+                Author Description
+              </label>
+              <textarea
+                id="new_author_description"
+                name="new_author_description"
+                rows="2"
+                class="py-2 px-3 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+                placeholder="Brief description of the author (optional)"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Source Field -->
+        <div class="mb-4">
+          <label for="source" class="block text-sm font-medium mb-2 dark:text-white">Source</label>
+          <input
+            type="text"
+            id="source"
+            name="source"
+            value="{% if quote and quote.source %}{{ quote.source }}{% endif %}"
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="Book title, article, speech, etc. (optional)"
+          >
+        </div>
+
+        <!-- Date Fields Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <!-- Exact Date -->
+          <div>
+            <label for="quote_date" class="block text-sm font-medium mb-2 dark:text-white">Date</label>
+            <input
+              type="date"
+              id="quote_date"
+              name="quote_date"
+              value="{% if quote and quote.quote_date %}{{ quote.quote_date }}{% endif %}"
+              class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            >
+            <p class="mt-1 text-xs text-gray-500 dark:text-neutral-500">Exact date when the quote was said/written</p>
+          </div>
+
+          <!-- Approximate Date -->
+          <div>
+            <label for="date_approximation" class="block text-sm font-medium mb-2 dark:text-white">Approximate Date</label>
+            <input
+              type="text"
+              id="date_approximation"
+              name="date_approximation"
+              value="{% if quote and quote.date_approximation %}{{ quote.date_approximation }}{% endif %}"
+              class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+              placeholder="e.g., 'early 20th century'"
+            >
+            <p class="mt-1 text-xs text-gray-500 dark:text-neutral-500">Use when exact date is unknown</p>
+          </div>
+        </div>
+
+        <!-- Tags Field -->
+        <div class="mb-4">
+          <label for="tags" class="block text-sm font-medium mb-2 dark:text-white">Manual Tags</label>
+          <input
+            type="text"
+            id="tags"
+            name="tags"
+            value="{% if quote and quote.tags_string %}{{ quote.tags_string }}{% endif %}"
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="investing, wisdom, philosophy (comma-separated)"
+          >
+          <p class="mt-1 text-xs text-gray-500 dark:text-neutral-500">Separate multiple tags with commas. Tags will be normalized to lowercase.</p>
+        </div>
+
+        <!-- Auto-Tags Display (Edit mode only) -->
+        {% if quote and quote.auto_tags %}
+        <div class="mb-6">
+          <label class="block text-sm font-medium mb-2 dark:text-white">
+            Auto-Generated Tags
+            <span class="text-xs font-normal text-gray-500 dark:text-neutral-400">(based on quote content)</span>
+          </label>
+          <div class="flex flex-wrap gap-2 p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-700">
+            {% for tag in quote.auto_tags %}
+            <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500">
+              <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M21 12a9 9 0 1 1-18 0"/>
+              </svg>
+              {{ tag }}
+            </span>
+            {% endfor %}
+          </div>
+          <p class="mt-1 text-xs text-gray-500 dark:text-neutral-500">
+            Auto-tags are generated from keywords in the quote text. They will update automatically when you save changes.
+          </p>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-x-2">
+          <a
+            href="{{ url_for('quotes') }}"
+            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
+          >
+            Cancel
+          </a>
+          <button
+            type="submit"
+            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {% if quote %}Update Quote{% else %}Create Quote{% endif %}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for Dynamic Author Fields -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const authorSelect = document.getElementById('author_id');
+    const newAuthorFields = document.getElementById('new-author-fields');
+    const newAuthorNameInput = document.getElementById('new_author_name');
+
+    function toggleNewAuthorFields() {
+      const selectedValue = authorSelect.value;
+
+      if (selectedValue === 'new') {
+        newAuthorFields.classList.remove('hidden');
+        newAuthorNameInput.setAttribute('required', 'required');
+      } else {
+        newAuthorFields.classList.add('hidden');
+        newAuthorNameInput.removeAttribute('required');
+      }
+    }
+
+    // Add event listener to author select
+    authorSelect.addEventListener('change', toggleNewAuthorFields);
+
+    // Initialize on page load
+    toggleNewAuthorFields();
+  });
+</script>
+
+{% endblock %}

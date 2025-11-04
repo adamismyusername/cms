@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Goldco AI - Goldco CMS{% endblock %}
+
+{% block content %}
+<!-- AI Chat Container -->
+<div class="flex flex-col h-[calc(100vh-8rem)]">
+  <!-- Header -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700 mb-4">
+    <div class="px-6 py-4 flex justify-between items-center">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
+          Goldco AI
+        </h2>
+        <p class="text-sm text-gray-600 dark:text-neutral-400">
+          Ask questions about your company data
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Model Selector -->
+        <div class="flex items-center gap-2">
+          <label for="model-select" class="text-sm font-medium text-gray-700 dark:text-neutral-300">Model:</label>
+          <select id="model-select" class="py-2 px-3 pe-9 block border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+            <option value="mistral:7b-instruct-q4_K_M" selected>Smart (Mistral 7B) - 30-60s</option>
+            <option value="llama3.2:3b-instruct-q4_K_M">Fast (Llama 3.2 3B) - 10-15s</option>
+          </select>
+        </div>
+
+        <!-- New Chat Button -->
+        <button type="button" id="new-chat-btn" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-700">
+          <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"/>
+            <path d="M12 5v14"/>
+          </svg>
+          New Chat
+        </button>
+
+        <!-- Health Status -->
+        <div id="health-status" class="flex items-center gap-2">
+          <span class="inline-flex size-2 rounded-full bg-gray-400 dark:bg-neutral-600"></span>
+          <span class="text-xs text-gray-600 dark:text-neutral-400">Checking...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Messages Area -->
+  <div id="chat-messages" class="flex-1 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700 mb-4">
+    <div class="p-4 sm:p-6">
+      <!-- Welcome Message -->
+      <div id="welcome-message" class="max-w-3xl mx-auto flex gap-x-4">
+        <svg class="shrink-0 size-10 rounded-lg" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="8" fill="#2563EB" />
+          <path d="M10 28V18.64C10 13.8683 14.0294 10 19 10C23.9706 10 28 13.8683 28 18.64C28 23.4117 23.9706 27.28 19 27.28H18.25" stroke="white" stroke-width="1.5" />
+          <path d="M13 28V18.7552C13 15.5104 15.6863 12.88 19 12.88C22.3137 12.88 25 15.5104 25 18.7552C25 22 22.3137 24.6304 19 24.6304H18.25" stroke="white" stroke-width="1.5" />
+          <ellipse cx="19" cy="18.6554" rx="3.75" ry="3.6" fill="white" />
+        </svg>
+
+        <div class="space-y-3">
+          <h3 class="font-semibold text-gray-800 dark:text-white">
+            Welcome to Goldco AI
+          </h3>
+          <div class="space-y-2">
+            <p class="text-sm text-gray-600 dark:text-neutral-400">
+              I can help you analyze company data and answer questions. Try asking:
+            </p>
+            <ul class="list-disc list-outside space-y-1 ps-4">
+              <li class="text-sm text-gray-600 dark:text-neutral-400">
+                What was our Q3 Gold IRA performance?
+              </li>
+              <li class="text-sm text-gray-600 dark:text-neutral-400">
+                Analyze our recent marketing campaigns
+              </li>
+              <li class="text-sm text-gray-600 dark:text-neutral-400">
+                Show me sales trends for this quarter
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat messages will be inserted here -->
+      <div id="messages-container" class="space-y-6 mt-6"></div>
+    </div>
+  </div>
+
+  <!-- Input Area (Fixed at Bottom) -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
+    <div class="p-4">
+      <form id="chat-form" class="relative">
+        <textarea
+          id="chat-input"
+          rows="3"
+          class="p-4 pb-12 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+          placeholder="Ask me anything about your company data..."
+        ></textarea>
+
+        <!-- Toolbar -->
+        <div class="absolute bottom-px inset-x-px p-2 rounded-b-lg bg-white dark:bg-neutral-900">
+          <div class="flex justify-between items-center">
+            <!-- Character Count (Optional) -->
+            <div class="text-xs text-gray-400 dark:text-neutral-600">
+              <span id="char-count">0</span> characters
+            </div>
+
+            <!-- Send Button -->
+            <div class="flex items-center gap-x-1">
+              <button
+                type="submit"
+                id="send-btn"
+                class="inline-flex shrink-0 justify-center items-center size-8 rounded-lg text-white bg-blue-600 hover:bg-blue-500 focus:z-10 focus:outline-hidden focus:bg-blue-500"
+              >
+                <svg class="shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Template (Hidden, cloned by JS) -->
+<template id="loading-template">
+  <div class="max-w-3xl mx-auto flex gap-x-4 loading-indicator">
+    <svg class="shrink-0 size-10 rounded-lg" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="8" fill="#2563EB" />
+      <path d="M10 28V18.64C10 13.8683 14.0294 10 19 10C23.9706 10 28 13.8683 28 18.64C28 23.4117 23.9706 27.28 19 27.28H18.25" stroke="white" stroke-width="1.5" />
+      <path d="M13 28V18.7552C13 15.5104 15.6863 12.88 19 12.88C22.3137 12.88 25 15.5104 25 18.7552C25 22 22.3137 24.6304 19 24.6304H18.25" stroke="white" stroke-width="1.5" />
+      <ellipse cx="19" cy="18.6554" rx="3.75" ry="3.6" fill="white" />
+    </svg>
+    <div class="space-y-3">
+      <div class="flex items-center gap-2">
+        <div class="animate-spin inline-block size-4 border-[2px] border-current border-t-transparent text-blue-600 rounded-full" role="status" aria-label="loading">
+          <span class="sr-only">Loading...</span>
+        </div>
+        <span class="text-sm text-gray-600 dark:text-neutral-400">Thinking...</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Include AI Chat JavaScript -->
+<script src="{{ url_for('static', filename='assets/js/ai-chat.js') }}"></script>
+
+{% endblock %}

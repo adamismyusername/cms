@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Content - Goldco CMS{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-5">
+  <h1 class="text-2xl font-semibold text-gray-800 dark:text-neutral-200">Edit Content</h1>
+  <p class="text-sm text-gray-600 dark:text-neutral-400">Update content information</p>
+</div>
+
+<!-- Edit Form Card -->
+<div class="max-w-4xl">
+  <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
+    <div class="p-6 sm:p-8">
+      <form method="POST" action="{{ url_for('edit', content_id=content.id) }}">
+
+        <!-- Content Type Display (Read-only) -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium mb-2 dark:text-white">Content Type</label>
+          <div class="flex items-center gap-x-2">
+            {% if content.content_type == 'file' %}
+            <span class="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500">
+              <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              File Upload
+            </span>
+            {% elif content.content_type == 'text' %}
+            <span class="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500">
+              <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+              </svg>
+              Text
+            </span>
+            {% elif content.content_type == 'link' %}
+            <span class="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-500">
+              <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              Link
+            </span>
+            {% elif content.content_type == 'code' %}
+            <span class="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium bg-gray-100 text-gray-800 dark:bg-neutral-700 dark:text-neutral-400">
+              <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
+              </svg>
+              Code
+            </span>
+            {% endif %}
+            <span class="text-xs text-gray-500 dark:text-neutral-500">(Content type cannot be changed)</span>
+          </div>
+        </div>
+
+        <!-- Title Field -->
+        <div class="mb-4">
+          <label for="title" class="block text-sm font-medium mb-2 dark:text-white">Title <span class="text-red-500">*</span></label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            required
+            value="{{ content.title }}"
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="Enter a descriptive title"
+          >
+        </div>
+
+        <!-- Description Field -->
+        <div class="mb-4">
+          <label for="description" class="block text-sm font-medium mb-2 dark:text-white">Description</label>
+          <textarea
+            id="description"
+            name="description"
+            rows="3"
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="Enter a brief description"
+          >{{ content.description if content.description }}</textarea>
+        </div>
+
+        <!-- File Info (Shown when type is 'file' - Read-only) -->
+        {% if content.content_type == 'file' %}
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2 dark:text-white">Uploaded File</label>
+          <div class="flex items-center gap-x-3 p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-neutral-900 dark:border-neutral-700">
+            <svg class="shrink-0 size-6 text-blue-600 dark:text-blue-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <div class="grow">
+              <p class="text-sm font-medium text-gray-800 dark:text-neutral-200">
+                {{ content.file_url.split('/')[-1] if content.file_url else 'No file' }}
+              </p>
+              <p class="text-xs text-gray-500 dark:text-neutral-500">File cannot be changed, only metadata can be updated</p>
+            </div>
+            <a
+              href="{{ url_for('download_file', content_id=content.id) }}"
+              class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            >
+              <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" x2="12" y1="15" y2="3"/>
+              </svg>
+              Download
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Content Field (Shown when type is 'text' or 'code') -->
+        {% if content.content_type == 'text' or content.content_type == 'code' %}
+        <div class="mb-4">
+          <label for="content" class="block text-sm font-medium mb-2 dark:text-white">Content</label>
+          <textarea
+            id="content"
+            name="content"
+            rows="10"
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600 font-mono"
+            placeholder="Enter your content here..."
+          >{{ content.content if content.content }}</textarea>
+        </div>
+        {% endif %}
+
+        <!-- URL Field (Shown when type is 'link') -->
+        {% if content.content_type == 'link' %}
+        <div class="mb-4">
+          <label for="url" class="block text-sm font-medium mb-2 dark:text-white">URL</label>
+          <input
+            type="url"
+            id="url"
+            name="url"
+            value="{{ content.url if content.url }}"
+            class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="https://example.com"
+          >
+        </div>
+        {% endif %}
+
+        <!-- Metadata Info -->
+        <div class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-neutral-900 dark:border-neutral-700">
+          <div class="grid sm:grid-cols-2 gap-4 text-xs">
+            <div>
+              <span class="text-gray-500 dark:text-neutral-500">Created:</span>
+              <span class="ml-2 text-gray-800 dark:text-neutral-200">{{ content.created_at[:19] if content.created_at else 'N/A' }}</span>
+            </div>
+            <div>
+              <span class="text-gray-500 dark:text-neutral-500">Last Updated:</span>
+              <span class="ml-2 text-gray-800 dark:text-neutral-200">{{ content.updated_at[:19] if content.updated_at else 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-x-2">
+          <a
+            href="{{ url_for('frontend') }}"
+            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800"
+          >
+            Cancel
+          </a>
+          <button
+            type="submit"
+            class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Save Changes
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

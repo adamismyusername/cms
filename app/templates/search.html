@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Goldco CMS{% endblock %}
+
+{% block content %}
+<!-- Search Card -->
+<div class="flex flex-col">
+  <div class="-m-1.5 overflow-x-auto">
+    <div class="p-1.5 min-w-full inline-block align-middle">
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden dark:bg-neutral-800 dark:border-neutral-700">
+
+        <!-- Header with Search Bar -->
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-neutral-700">
+          <div class="mb-3 flex justify-between items-start">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
+                Search Results
+              </h2>
+              <p class="text-sm text-gray-600 dark:text-neutral-400">
+                {% if query %}
+                  Found {{ results|length }} result(s) for "{{ query }}"
+                {% else %}
+                  Enter a search term to find content
+                {% endif %}
+              </p>
+            </div>
+            <!-- Reset Column Widths Button -->
+            <button
+              onclick="resetTableWidths('search-results')"
+              class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            >
+              Reset Columns
+            </button>
+          </div>
+
+          <!-- Search Form -->
+          <form action="{{ url_for('search') }}" method="GET" class="relative max-w-lg">
+            <input
+              type="text"
+              name="q"
+              value="{{ query }}"
+              placeholder="Search content..."
+              class="py-3 px-4 pe-11 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            >
+            <button type="submit" class="absolute inset-y-0 end-0 flex items-center pointer-events-auto pe-4">
+              <svg class="shrink-0 size-5 text-gray-400 dark:text-neutral-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+        <!-- End Header -->
+
+        {% if results and results|length > 0 %}
+        <!-- Results Table -->
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 resizable-table" data-table-name="search-results">
+          <colgroup>
+            <col data-column="title">
+            <col data-column="type">
+            <col data-column="description">
+            <col data-column="date">
+            <col data-column="actions">
+          </colgroup>
+          <thead class="bg-gray-50 dark:bg-neutral-800">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-start" data-column="title">
+                <div class="flex items-center gap-x-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                    Title
+                  </span>
+                </div>
+              </th>
+
+              <th scope="col" class="px-6 py-3 text-start" data-column="type">
+                <div class="flex items-center gap-x-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                    Type
+                  </span>
+                </div>
+              </th>
+
+              <th scope="col" class="px-6 py-3 text-start" data-column="description">
+                <div class="flex items-center gap-x-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                    Description
+                  </span>
+                </div>
+              </th>
+
+              <th scope="col" class="px-6 py-3 text-start" data-column="date">
+                <div class="flex items-center gap-x-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                    Date
+                  </span>
+                </div>
+              </th>
+
+              <th scope="col" class="px-6 py-3 text-end" data-column="actions">
+                <span class="text-xs font-semibold uppercase tracking-wide text-gray-800 dark:text-neutral-200">
+                  Actions
+                </span>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
+            {% for item in results %}
+            <tr class="hover:bg-gray-50 dark:hover:bg-neutral-700">
+              <td class="whitespace-nowrap px-6 py-3">
+                <span class="text-sm font-medium text-gray-800 dark:text-neutral-200">
+                  {{ item.title }}
+                </span>
+              </td>
+
+              <td class="whitespace-nowrap px-6 py-3">
+                {% if item.content_type == 'file' %}
+                <span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500">
+                  <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  File
+                </span>
+                {% elif item.content_type == 'text' %}
+                <span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500">
+                  <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                  </svg>
+                  Text
+                </span>
+                {% elif item.content_type == 'link' %}
+                <span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-500">
+                  <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
+                  Link
+                </span>
+                {% elif item.content_type == 'code' %}
+                <span class="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-gray-100 text-gray-800 dark:bg-neutral-700 dark:text-neutral-400">
+                  <svg class="shrink-0 size-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 18 22 12 16 6"/>
+                    <polyline points="8 6 2 12 8 18"/>
+                  </svg>
+                  Code
+                </span>
+                {% endif %}
+              </td>
+
+              <td class="px-6 py-3">
+                <span class="text-sm text-gray-600 dark:text-neutral-400">
+                  {{ item.description[:60] }}{% if item.description and item.description|length > 60 %}...{% endif %}
+                </span>
+              </td>
+
+              <td class="whitespace-nowrap px-6 py-3">
+                <span class="text-sm text-gray-600 dark:text-neutral-400">
+                  {{ item.created_at[:10] if item.created_at else 'N/A' }}
+                </span>
+              </td>
+
+              <td class="whitespace-nowrap px-6 py-3">
+                <div class="flex justify-end items-center gap-x-2">
+
+                  {% if item.content_type == 'file' %}
+                  <!-- Download Button for Files -->
+                  <a
+                    href="{{ url_for('download_file', content_id=item.id) }}"
+                    class="inline-flex items-center gap-x-1 text-sm text-blue-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium dark:text-blue-500"
+                  >
+                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" x2="12" y1="15" y2="3"/>
+                    </svg>
+                    Download
+                  </a>
+                  {% elif item.content_type == 'link' %}
+                  <!-- View Link Button -->
+                  <a
+                    href="{{ item.url }}"
+                    target="_blank"
+                    class="inline-flex items-center gap-x-1 text-sm text-blue-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium dark:text-blue-500"
+                  >
+                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/>
+                      <line x1="10" x2="21" y1="14" y2="3"/>
+                    </svg>
+                    Visit
+                  </a>
+                  {% endif %}
+
+                  {% if session.role == 'admin' %}
+                  <!-- Edit Button (Admin Only) -->
+                  <a
+                    href="{{ url_for('edit', content_id=item.id) }}"
+                    class="inline-flex items-center gap-x-1 text-sm text-gray-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium dark:text-neutral-400"
+                  >
+                    Edit
+                  </a>
+
+                  <!-- Delete Button (Admin Only) -->
+                  <form method="POST" action="{{ url_for('delete', content_id=item.id) }}" onsubmit="return confirm('Are you sure you want to delete this content?');" class="inline">
+                    <button
+                      type="submit"
+                      class="inline-flex items-center gap-x-1 text-sm text-red-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium dark:text-red-500"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <!-- End Results Table -->
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="px-6 py-12 text-center">
+          <div class="max-w-sm mx-auto">
+            {% if query %}
+            <!-- No Results Found -->
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-neutral-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+              <line x1="11" x2="11" y1="8" y2="14"/>
+            </svg>
+            <h3 class="mb-2 text-xl font-semibold text-gray-800 dark:text-neutral-200">
+              No results found
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-neutral-400 mb-4">
+              We couldn't find any content matching "{{ query }}". Try different keywords.
+            </p>
+            {% else %}
+            <!-- No Search Performed -->
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-neutral-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+            <h3 class="mb-2 text-xl font-semibold text-gray-800 dark:text-neutral-200">
+              Start searching
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-neutral-400 mb-4">
+              Enter a search term above to find content across titles, descriptions, and content.
+            </p>
+            {% endif %}
+
+            <a
+              href="{{ url_for('frontend') }}"
+              class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            >
+              View All Content
+            </a>
+          </div>
+        </div>
+        <!-- End Empty State -->
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End Search Card -->
+{% endblock %}
