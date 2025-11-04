@@ -163,3 +163,4 @@ composer.lock
 *.pid
 *.seed
 *.pid.lock
+Docker Desktop Installer.exe
