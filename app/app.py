@@ -19,7 +19,7 @@ UPLOAD_FOLDER = '/app/uploads/files'
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'txt'}
 
 # AI API configuration
-AI_API_URL = 'http://goldco-api:8082'
+AI_API_URL = 'http://goldco-api:8080'
 
 # Ensure upload directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
