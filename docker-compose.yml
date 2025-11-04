@@ -13,6 +13,9 @@ services:
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - SECRET_KEY=${SECRET_KEY}
     restart: unless-stopped
+    networks:
+      - default
+      - goldco-ai_default
 
   cms-worker:
     build: .
@@ -28,3 +31,7 @@ services:
     restart: unless-stopped
     depends_on:
       - cms-app
+
+networks:
+  goldco-ai_default:
+    external: true
