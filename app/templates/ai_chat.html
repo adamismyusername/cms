@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Goldco AI - Goldco CMS{% endblock %}
+{% block title %}Haven - Goldco CMS{% endblock %}
 
 {% block content %}
 <!-- AI Chat Container -->
@@ -10,10 +10,10 @@
     <div class="px-6 py-4 flex justify-between items-center">
       <div>
         <h2 class="text-xl font-semibold text-gray-800 dark:text-neutral-200">
-          Goldco AI
+          Meet Haven - Goldco's AI Assistant, and your new secret weapon.
         </h2>
         <p class="text-sm text-gray-600 dark:text-neutral-400">
-          Ask questions about your company data
+          Stop wasting 20 minutes digging through email and chat threads or waiting for Bob to get back from lunch so you can ask him a simple question. Haven knows our processes, our systems, and where to find what you need—right now. She won't make your decisions or pretend to be an expert, but she'll unstick you in 30 seconds instead of 30 minutes. We named her Haven because that's what gold is to our clients—a safe haven. Now you've got one too.
         </p>
       </div>
 
@@ -22,8 +22,8 @@
         <div class="flex items-center gap-2">
           <label for="model-select" class="text-sm font-medium text-gray-700 dark:text-neutral-300">Model:</label>
           <select id="model-select" class="py-2 px-3 pe-9 block border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-            <option value="mistral:7b-instruct-q4_K_M" selected>Smart (Mistral 7B) - 30-60s</option>
-            <option value="llama3.2:3b-instruct-q4_K_M">Fast (Llama 3.2 3B) - 10-15s</option>
+            <option value="mistral:7b-instruct-q4_K_M">Smart (answers in 30-60 seconds)</option>
+            <option value="llama3.2:3b-instruct-q4_K_M" selected>Fast (answers in 10-15 seconds)</option>
           </select>
         </div>
 
@@ -45,48 +45,8 @@
     </div>
   </div>
 
-  <!-- Chat Messages Area -->
-  <div id="chat-messages" class="flex-1 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700 mb-4">
-    <div class="p-4 sm:p-6">
-      <!-- Welcome Message -->
-      <div id="welcome-message" class="max-w-3xl mx-auto flex gap-x-4">
-        <svg class="shrink-0 size-10 rounded-lg" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="40" height="40" rx="8" fill="#2563EB" />
-          <path d="M10 28V18.64C10 13.8683 14.0294 10 19 10C23.9706 10 28 13.8683 28 18.64C28 23.4117 23.9706 27.28 19 27.28H18.25" stroke="white" stroke-width="1.5" />
-          <path d="M13 28V18.7552C13 15.5104 15.6863 12.88 19 12.88C22.3137 12.88 25 15.5104 25 18.7552C25 22 22.3137 24.6304 19 24.6304H18.25" stroke="white" stroke-width="1.5" />
-          <ellipse cx="19" cy="18.6554" rx="3.75" ry="3.6" fill="white" />
-        </svg>
-
-        <div class="space-y-3">
-          <h3 class="font-semibold text-gray-800 dark:text-white">
-            Welcome to Goldco AI
-          </h3>
-          <div class="space-y-2">
-            <p class="text-sm text-gray-600 dark:text-neutral-400">
-              I can help you analyze company data and answer questions. Try asking:
-            </p>
-            <ul class="list-disc list-outside space-y-1 ps-4">
-              <li class="text-sm text-gray-600 dark:text-neutral-400">
-                What was our Q3 Gold IRA performance?
-              </li>
-              <li class="text-sm text-gray-600 dark:text-neutral-400">
-                Analyze our recent marketing campaigns
-              </li>
-              <li class="text-sm text-gray-600 dark:text-neutral-400">
-                Show me sales trends for this quarter
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chat messages will be inserted here -->
-      <div id="messages-container" class="space-y-6 mt-6"></div>
-    </div>
-  </div>
-
-  <!-- Input Area (Fixed at Bottom) -->
-  <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
+  <!-- Input Area -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700 mb-4">
     <div class="p-4">
       <form id="chat-form" class="relative">
         <textarea
@@ -121,11 +81,44 @@
       </form>
     </div>
   </div>
+
+  <!-- Chat Messages Area -->
+  <div id="chat-messages" class="flex-1 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700 mb-4">
+    <div class="p-4 sm:p-6">
+      <!-- Welcome Message -->
+      <div id="welcome-message" class="w-[700px] mx-auto flex gap-x-4">
+        <div class="space-y-3">
+          <h3 class="font-semibold text-gray-800 dark:text-white">
+            Welcome to Haven
+          </h3>
+          <div class="space-y-2">
+            <p class="text-sm text-gray-600 dark:text-neutral-400">
+              I can help you analyze company data and answer questions. Try asking:
+            </p>
+            <ul class="list-disc list-outside space-y-1 ps-4">
+              <li class="text-sm text-gray-600 dark:text-neutral-400">
+                What was our Q3 Gold IRA performance?
+              </li>
+              <li class="text-sm text-gray-600 dark:text-neutral-400">
+                Analyze our recent marketing campaigns
+              </li>
+              <li class="text-sm text-gray-600 dark:text-neutral-400">
+                Show me sales trends for this quarter
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat messages will be inserted here -->
+      <div id="messages-container" class="space-y-6 mt-6"></div>
+    </div>
+  </div>
 </div>
 
 <!-- Loading Template (Hidden, cloned by JS) -->
 <template id="loading-template">
-  <div class="max-w-3xl mx-auto flex gap-x-4 loading-indicator">
+  <div class="w-[700px] mx-auto flex gap-x-4 loading-indicator">
     <svg class="shrink-0 size-10 rounded-lg" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect width="40" height="40" rx="8" fill="#2563EB" />
       <path d="M10 28V18.64C10 13.8683 14.0294 10 19 10C23.9706 10 28 13.8683 28 18.64C28 23.4117 23.9706 27.28 19 27.28H18.25" stroke="white" stroke-width="1.5" />

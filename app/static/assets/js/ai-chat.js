@@ -162,7 +162,7 @@
    */
   function addUserMessage(text) {
     const messageEl = document.createElement('div');
-    messageEl.className = 'max-w-3xl mx-auto py-4';
+    messageEl.className = 'w-[700px] mx-auto py-4';
     messageEl.innerHTML = `
       <div class="flex gap-x-4">
         <span class="shrink-0 inline-flex items-center justify-center size-10 rounded-lg bg-gray-600 dark:bg-neutral-700">
@@ -182,7 +182,7 @@
    */
   function addAIMessage(text, model, responseTime) {
     const messageEl = document.createElement('div');
-    messageEl.className = 'max-w-3xl mx-auto py-4';
+    messageEl.className = 'w-[700px] mx-auto py-4';
 
     const modelName = model.includes('mistral') ? 'Smart (Mistral)' : 'Fast (Llama)';
 
@@ -229,7 +229,7 @@
    */
   function addErrorMessage(title, details) {
     const messageEl = document.createElement('div');
-    messageEl.className = 'max-w-3xl mx-auto py-4';
+    messageEl.className = 'w-[700px] mx-auto py-4';
     messageEl.innerHTML = `
       <div class="flex gap-x-4">
         <div class="shrink-0 inline-flex items-center justify-center size-10 rounded-lg bg-red-100 dark:bg-red-900/30">
